@@ -8,7 +8,7 @@ import {
   PRIVATE_ADDRESS,
 } from './utils.js';
 
-import { Fr } from '@aztec/aztec.js/fields';
+import { Fr, GrumpkinScalar } from '@aztec/aztec.js/fields';
 import { AztecAddress } from '@aztec/aztec.js/addresses';
 import { type EmbeddedWallet } from '@aztec/wallets/embedded';
 import { ContractDeployer } from '@aztec/aztec.js/deployment';
@@ -97,7 +97,7 @@ describe('NFT', () => {
       await assertOwnsPrivateNFT(nft, tokenId, alice, true);
 
       // We create a new account manager for bob and override the address for this test
-      const bobAccountManager = await wallet.createSchnorrAccount(Fr.random(), Fr.random());
+      const bobAccountManager = await wallet.createSchnorrAccount(Fr.random(), Fr.random(), GrumpkinScalar.random());
       const bob = bobAccountManager.address;
 
       // Generate the commitment

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_NAME="@defi-wonderland/aztec-standards"
+PROJECT_NAME="@aztec/aztec-standards"
 EXPORT_DIR="export/${PROJECT_NAME}"
 
 # ── Compile artifacts to JS ──────────────────────────────────────────────────
@@ -24,8 +24,10 @@ cp -r dist/artifacts/* "${EXPORT_DIR}/artifacts/"
 # Copy compiled JS artifacts to dist/ (for pre-release dist.tar.gz)
 cp -r dist/artifacts/* "${EXPORT_DIR}/dist/"
 
-# Copy compiled Noir contracts
+# Copy compiled Noir contracts (excluding the *.json.bak backups that
+# `aztec inspect-contract` leaves behind — they ~double the package size)
 cp -r target "${EXPORT_DIR}/"
+find "${EXPORT_DIR}/target" -name '*.bak' -delete
 
 # Copy deployments.json if it exists
 if [ -f "src/deployments.json" ]; then

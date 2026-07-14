@@ -1,12 +1,10 @@
 name: Production Release
 
+# Tag-driven: pushing a `v*` tag (e.g. v5.0.0) publishes that version.
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version from package.json (e.g., 1.0.0 or 1.0.0-beta.1). Do NOT include the "v" prefix.'
-        required: true
-        type: string
+  push:
+    tags:
+      - 'v*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,62 +19,101 @@ jobs:
     environment: Production
     runs-on: ubuntu-latest-m
     timeout-minutes: 60
-    if: github.ref == 'refs/heads/main'
     permissions:
-      contents: write  # Required to create and push tags
+      contents: read # checkout (the tag already exists)
+      id-token: write # OIDC token for npm provenance
 
     env:
-      PROJECT_NAME: '@defi-wonderland/aztec-standards'
+      PROJECT_NAME: '@aztec/aztec-standards'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 
+      # Toolchain is pinned via package.json `config.aztecVersion`: this action
+      # reads that field and installs the matching Aztec version.
       - name: Setup Aztec environment
         id: setup-aztec
-        uses: defi-wonderland/aztec-ci-actions/actions/setup-aztec@v0
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
         with:
           start-pxe: 'false'
           run-codegen: 'true'
 
-      # TODO: Automate changing package.json version from the workflow input
-      #       (e.g., open a PR or push a signed commit) so manual edits are not required.
-      - name: Validate input version matches package.json
+      # Version comes from the tag (v5.0.0 -> 5.0.0). Validate it matches package.json,
+      # and derive the npm dist-tag: `latest` for a final release; otherwise the
+      # prerelease identifier (rc / beta / nightly) so consumers can `npm i pkg@rc`.
+      - name: Resolve release metadata
+        id: meta
         run: |
-          INPUT_VERSION="${{ github.event.inputs.version }}"
+          VERSION="${GITHUB_REF_NAME#v}"
           PKG_VERSION=$(node -p "require('./package.json').version")
-          echo "Input version: $INPUT_VERSION"
+          echo "Tag version: $VERSION"
           echo "package.json version: $PKG_VERSION"
-          if [ "$INPUT_VERSION" != "$PKG_VERSION" ]; then
-            echo "::error::Input version ($INPUT_VERSION) does not match package.json version ($PKG_VERSION). Update package.json or re-run with the matching version (no 'v' prefix)."
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} (version $VERSION) does not match package.json version ($PKG_VERSION)."
             exit 1
           fi
+
+          if [[ "$VERSION" == *-* ]]; then
+            PRERELEASE="${VERSION#*-}"     # e.g. "rc.2"
+            DIST_TAG="${PRERELEASE%%.*}"   # e.g. "rc"
+          else
+            DIST_TAG="latest"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+          echo "Resolved npm dist-tag: $DIST_TAG"
 
       - name: Build package
         run: yarn build
 
       - name: Setup Node.js for NPM publish
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
+      # Idempotent: npm versions are immutable, so a re-run of the same tag must not
+      # hard-fail. If the version is already published, just ensure the dist-tag points
+      # at it; otherwise publish (with provenance).
       - name: Publish to NPM
-        run: cd export/${{ env.PROJECT_NAME }} && npm publish --access public --tag latest
+        run: |
+          cd "export/${PROJECT_NAME}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          DIST_TAG="${{ steps.meta.outputs.dist_tag }}"
+          if npm view "${PROJECT_NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "::notice::${PROJECT_NAME}@${VERSION} already published — ensuring dist-tag '${DIST_TAG}' and skipping publish."
+            npm dist-tag add "${PROJECT_NAME}@${VERSION}" "${DIST_TAG}"
+          else
+            npm publish --access public --provenance --tag "${DIST_TAG}"
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Create GitHub Release Tag (adds 'v' prefix to input)
+      # Post-publish smoke test: install the just-published package from the registry
+      # (clean dir) and confirm it resolves to the expected version. Catches
+      # "published but unusable" (bad files/exports), wrong dist-tag, or wrong access.
+      - name: Smoke-test published package
         run: |
-          TAG_NAME="v${{ github.event.inputs.version }}"
-          # Check if tag already exists
-          if git ls-remote --tags origin | grep -q "refs/tags/${TAG_NAME}$"; then
-            echo "::error::Tag ${TAG_NAME} already exists. Please use a different version."
-            exit 1
-          fi
-          git tag "${TAG_NAME}"
-          git push origin "${TAG_NAME}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          DIST_TAG="${{ steps.meta.outputs.dist_tag }}"
+          workdir="$(mktemp -d)"
+          cd "$workdir"
+          npm init -y >/dev/null
+          # Registry propagation can lag a few seconds after publish; retry.
+          for attempt in 1 2 3 4 5 6; do
+            if npm install "${PROJECT_NAME}@${VERSION}"; then
+              installed=true
+              break
+            fi
+            echo "install attempt ${attempt} failed; waiting 10s for registry propagation..."
+            sleep 10
+          done
+          [ "${installed:-false}" = true ] || { echo "::error::Could not install ${PROJECT_NAME}@${VERSION} from the registry."; exit 1; }
+          node -e "const p = require('${PROJECT_NAME}/package.json'); if (p.version !== '${VERSION}') { throw new Error('installed ' + p.version + ', expected ${VERSION}'); } console.log('smoke ok:', p.name, p.version);"
+          echo "::notice::Smoke test passed: ${PROJECT_NAME}@${VERSION} installs and resolves (dist-tag ${DIST_TAG})."
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

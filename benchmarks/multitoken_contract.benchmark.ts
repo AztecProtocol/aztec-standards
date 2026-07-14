@@ -1,9 +1,9 @@
-import type { Wallet } from '@aztec/aztec.js/wallet';
+import type { EmbeddedWallet } from '@aztec/wallets/embedded';
 import { AztecAddress } from '@aztec/aztec.js/addresses';
 import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
 
 // Import the new Benchmark base class and context
-import { Benchmark, BenchmarkContext } from '@defi-wonderland/aztec-benchmark';
+import { Benchmark, BenchmarkContext } from '@aztec/aztec-benchmark';
 
 import { MultiTokenContract } from '../src/artifacts/MultiToken.js';
 import {
@@ -16,7 +16,7 @@ import {
 // Extend the BenchmarkContext from the new package
 interface MultiTokenBenchmarkContext extends BenchmarkContext {
   cleanup: () => Promise<void>;
-  wallet: Wallet;
+  wallet: EmbeddedWallet;
   deployer: AztecAddress;
   accounts: AztecAddress[];
   multiTokenContract: MultiTokenContract;

@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 60
 
     env:
-      PROJECT_NAME: '@defi-wonderland/aztec-standards'
+      PROJECT_NAME: '@aztec/aztec-standards'
 
     steps:
       - name: Checkout
@@ -27,7 +27,7 @@ jobs:
 
       - name: Setup Aztec environment
         id: setup-aztec
-        uses: defi-wonderland/aztec-ci-actions/actions/setup-aztec@v0
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
         with:
           start-pxe: 'false'
           run-codegen: 'true'

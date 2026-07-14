@@ -8,12 +8,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: 'yarn'
+      - run: yarn install --frozen-lockfile
+      - run: yarn format:check
+
   checks:
-    uses: defi-wonderland/aztec-ci-actions/.github/workflows/run-tests.yml@v0
+    uses: AztecProtocol/aztec-ci-actions/.github/workflows/run-tests.yml@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
     secrets: inherit
 
   benchmark:
-    uses: defi-wonderland/aztec-benchmark/.github/workflows/pr-benchmark.yml@4.2.0
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@eea38b7fe8753ea970dea91edc1b45df46fa5987 # main
     permissions:
       contents: read
       pull-requests: write
