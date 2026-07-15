@@ -1,12 +1,12 @@
-import type { Wallet } from '@aztec/aztec.js/wallet';
+import type { EmbeddedWallet } from '@aztec/wallets/embedded';
 import { AztecAddress } from '@aztec/aztec.js/addresses';
 import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
-import { Fr } from '@aztec/aztec.js/fields';
+import { Fr, GrumpkinScalar } from '@aztec/aztec.js/fields';
 
 import { parseUnits } from 'viem';
 
 // Import the new Benchmark base class and context
-import { Benchmark, BenchmarkContext } from '@defi-wonderland/aztec-benchmark';
+import { Benchmark, BenchmarkContext } from '@aztec/aztec-benchmark';
 
 import { TokenContract } from '../src/artifacts/Token.js';
 import { deployTokenWithMinter, initializeTransferCommitment, setupTestSuite } from '../src/ts/test/utils.js';
@@ -14,7 +14,7 @@ import { deployTokenWithMinter, initializeTransferCommitment, setupTestSuite } f
 // Extend the BenchmarkContext from the new package
 interface TokenBenchmarkContext extends BenchmarkContext {
   cleanup: () => Promise<void>;
-  wallet: Wallet;
+  wallet: EmbeddedWallet;
   deployer: AztecAddress;
   accounts: AztecAddress[];
   tokenContract: TokenContract;
@@ -47,7 +47,7 @@ export default class TokenContractBenchmark extends Benchmark {
     // We need an account manager to decrypt the private logs in the initializeTransferCommitment function
     const secret = Fr.random();
     const salt = Fr.random();
-    const commitmentRecipientAccountManager = await wallet.createSchnorrAccount(secret, salt);
+    const commitmentRecipientAccountManager = await wallet.createSchnorrAccount(secret, salt, GrumpkinScalar.random());
     const commitment_1 = await initializeTransferCommitment(
       tokenContract,
       alice,

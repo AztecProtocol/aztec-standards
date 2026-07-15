@@ -1,9 +1,9 @@
 {
-  "name": "@defi-wonderland/aztec-standards",
-  "version": "5.0.0-rc.2",
+  "name": "@aztec/aztec-standards",
+  "version": "5.0.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/defi-wonderland/aztec-standards.git"
+    "url": "git+https://github.com/AztecProtocol/aztec-standards.git"
   },
   "author": "Wonderland",
   "license": "MIT",
@@ -18,6 +18,7 @@
     "test:js": "vitest run",
     "test:nr": "aztec test",
     "lint:prettier": "prettier '**/*.{js,ts}' --write",
+    "format:check": "prettier --check '**/*.{js,ts}'",
     "bench": "NODE_NO_WARNINGS=1 aztec-benchmark --suffix _base",
     "ccc": "yarn clean && yarn compile && yarn codegen",
     "deploy": "NODE_NO_WARNINGS=1 tsx scripts/deploy.ts"
@@ -26,15 +27,15 @@
     "*.ts": "prettier --write -u"
   },
   "dependencies": {
-    "@aztec/accounts": "5.0.0-rc.2",
-    "@aztec/aztec.js": "5.0.0-rc.2",
-    "@aztec/noir-contracts.js": "5.0.0-rc.2",
-    "@aztec/protocol-contracts": "5.0.0-rc.2",
-    "@aztec/pxe": "5.0.0-rc.2",
-    "@aztec/stdlib": "5.0.0-rc.2",
-    "@aztec/wallet-sdk": "5.0.0-rc.2",
-    "@aztec/wallets": "5.0.0-rc.2",
-    "@defi-wonderland/aztec-benchmark": "https://github.com/defi-wonderland/aztec-benchmark/releases/download/prerelease-a2add93/defi-wonderland-aztec-benchmark-5.0.0-rc.2-prerelease.a2add93.tgz",
+    "@aztec/accounts": "5.0.0",
+    "@aztec/aztec.js": "5.0.0",
+    "@aztec/noir-contracts.js": "5.0.0",
+    "@aztec/protocol-contracts": "5.0.0",
+    "@aztec/pxe": "5.0.0",
+    "@aztec/stdlib": "5.0.0",
+    "@aztec/wallet-sdk": "5.0.0",
+    "@aztec/wallets": "5.0.0",
+    "@aztec/aztec-benchmark": "5.0.0",
     "commander": "14.0.1",
     "dotenv": "16.4.7"
   },
@@ -50,7 +51,7 @@
     "vitest": "4.0.17"
   },
   "config": {
-    "aztecVersion": "5.0.0-rc.2"
+    "aztecVersion": "5.0.0"
   },
   "engines": {
     "node": ">=22"

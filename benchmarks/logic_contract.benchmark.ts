@@ -1,13 +1,13 @@
 // Import Aztec dependencies
 import { Fr } from '@aztec/aztec.js/fields';
 import { deriveKeys } from '@aztec/stdlib/keys';
-import type { Wallet } from '@aztec/aztec.js/wallet';
+import type { EmbeddedWallet } from '@aztec/wallets/embedded';
 import { AztecAddress } from '@aztec/aztec.js/addresses';
 import { getContractClassFromArtifact } from '@aztec/aztec.js/contracts';
 import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
 
 // Import the new Benchmark base class and context
-import { Benchmark, BenchmarkContext } from '@defi-wonderland/aztec-benchmark';
+import { Benchmark, BenchmarkContext } from '@aztec/aztec-benchmark';
 
 // Import artifacts
 import { EscrowContract, EscrowContractArtifact } from '../src/artifacts/Escrow.js';
@@ -19,7 +19,7 @@ import { setupTestSuite, deployLogic, deployEscrowWithPublicKeysAndSalt } from '
 // Extend the BenchmarkContext from the new package
 interface LogicBenchmarkContext extends BenchmarkContext {
   cleanup: () => Promise<void>;
-  wallet: Wallet;
+  wallet: EmbeddedWallet;
   deployer: AztecAddress;
   accounts: AztecAddress[];
   logicContract: TestLogicContract;

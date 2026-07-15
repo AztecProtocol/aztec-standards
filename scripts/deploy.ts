@@ -9,7 +9,7 @@ import {
 } from '@aztec/aztec.js/contracts';
 import { TxStatus } from '@aztec/aztec.js/tx';
 import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { Fr } from '@aztec/aztec.js/fields';
+import { Fr, GrumpkinScalar } from '@aztec/aztec.js/fields';
 import { SponsoredFeePaymentMethod } from '@aztec/aztec.js/fee';
 import { AccountManager, type Wallet } from '@aztec/aztec.js/wallet';
 import { createAztecNodeClient, type AztecNode } from '@aztec/aztec.js/node';
@@ -18,7 +18,7 @@ import { createLogger } from '@aztec/foundation/log';
 import { EmbeddedWallet } from '@aztec/wallets/embedded';
 import { SponsoredFPCContract } from '@aztec/noir-contracts.js/SponsoredFPC';
 import { SPONSORED_FPC_SALT } from '@aztec/constants';
-import { poseidon2Hash } from '@aztec/foundation/crypto/poseidon';
+import { deriveSecretKeyFromSigningKey } from '@aztec/accounts/utils';
 
 import { TokenContract, TokenContractArtifact } from '../src/artifacts/Token.js';
 import { DripperContract, DripperContractArtifact } from '../src/artifacts/Dripper.js';
@@ -127,7 +127,7 @@ function getDeploymentData(
 // --- CLI ---
 
 interface CLIOptions {
-  deployerSecret?: string;
+  signingKey?: string;
   dryRun?: boolean;
   output?: string;
   network: Network;
@@ -401,11 +401,12 @@ export async function deployContracts(options: CLIOptions, config: DeploymentCon
 
   const nodeUrl = config.network.nodeUrl;
 
-  const deployerSecretStr = options.deployerSecret || process.env.DEPLOYER_SECRET;
-  if (!deployerSecretStr || deployerSecretStr.trim().length === 0) {
-    throw new Error('Deployer secret is required (use --deployer-secret or DEPLOYER_SECRET env var)');
+  const signingKeyStr = options.signingKey || process.env.SIGNING_KEY_SECRET;
+  if (!signingKeyStr || signingKeyStr.trim().length === 0) {
+    throw new Error('Signing key is required (use --signing-key or SIGNING_KEY_SECRET env var)');
   }
-  const deployerSecret = await poseidon2Hash([Fr.fromBufferReduce(Buffer.from(deployerSecretStr, 'utf8'))]);
+  const signingKey: GrumpkinScalar = GrumpkinScalar.fromHexString(signingKeyStr);
+  const deployerSecret = await deriveSecretKeyFromSigningKey(signingKey);
 
   const node = createAztecNodeClient(nodeUrl);
   const isLocalNetwork = config.network.name === 'local-network';
@@ -422,7 +423,7 @@ export async function deployContracts(options: CLIOptions, config: DeploymentCon
     const nodeInfo = await node.getNodeInfo();
     logger.info(`Connected to Aztec node version: ${nodeInfo.nodeVersion}`);
 
-    const manager = await wallet.createSchnorrAccount(deployerSecret, Fr.ZERO);
+    const manager = await wallet.createSchnorrAccount(deployerSecret, Fr.ZERO, signingKey);
     const account = await manager.getAccount();
     logger.info(`Account created: ${account.getAddress().toString()}`);
 
@@ -523,8 +524,11 @@ const program = new Command();
 program
   .name('deploy')
   .description('Deploy Aztec Standards contracts')
-  .version(packageJson.version)
-  .option('--deployer-secret <secret>', 'Deployer secret (or use DEPLOYER_SECRET env var)')
+  .version(packageJson.version as string)
+  .option(
+    '--signing-key <scalar>',
+    'Deployer Schnorr signing key as a hex-encoded Grumpkin scalar (or use SIGNING_KEY_SECRET env var)',
+  )
   .option('--dry-run', 'Show configuration without deploying')
   .option('--output <file>', 'Write deployment JSON to file')
   .addOption(
