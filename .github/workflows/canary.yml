@@ -13,7 +13,7 @@ jobs:
   canary:
     name: Canary Release
     environment: Development
-    runs-on: ubuntu-latest-m
+    runs-on: ubuntu-latest
     timeout-minutes: 60
 
     env:

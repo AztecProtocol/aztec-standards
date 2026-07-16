@@ -22,10 +22,14 @@ jobs:
 
   checks:
     uses: AztecProtocol/aztec-ci-actions/.github/workflows/run-tests.yml@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
+    with:
+      runner: ubuntu-latest
     secrets: inherit
 
   benchmark:
-    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@eea38b7fe8753ea970dea91edc1b45df46fa5987 # main
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@c55ffd7470d4792ca106c31f2c1d1d5c5697079a # v5.0.0
+    with:
+      runner: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write

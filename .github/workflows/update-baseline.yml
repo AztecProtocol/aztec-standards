@@ -3,7 +3,6 @@ name: Update Benchmark Baseline
 on:
   push:
     branches:
-      - dev
       - main
   schedule:
     - cron: '0 0 1 * *'
@@ -15,7 +14,9 @@ concurrency:
 
 jobs:
   baseline:
-    uses: AztecProtocol/aztec-benchmark/.github/workflows/update-baseline.yml@eea38b7fe8753ea970dea91edc1b45df46fa5987 # main
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/update-baseline.yml@c55ffd7470d4792ca106c31f2c1d1d5c5697079a # v5.0.0
+    with:
+      runner: ubuntu-latest
     permissions:
       contents: read
       actions: write
