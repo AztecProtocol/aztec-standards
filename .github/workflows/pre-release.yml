@@ -8,7 +8,7 @@ jobs:
   pre-release:
     uses: AztecProtocol/aztec-ci-actions/.github/workflows/pre-release.yml@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
     with:
-      package-dir: export/@aztec/aztec-standards
+      package-dir: export/@aztec-foundation/aztec-standards
       runner: ubuntu-latest
     secrets: inherit
     permissions:
