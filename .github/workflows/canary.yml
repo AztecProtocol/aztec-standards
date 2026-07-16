@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 60
 
     env:
-      PROJECT_NAME: '@aztec/aztec-standards'
+      PROJECT_NAME: '@aztec-foundation/aztec-standards'
 
     steps:
       - name: Checkout

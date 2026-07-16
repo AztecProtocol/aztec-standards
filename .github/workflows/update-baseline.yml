@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   baseline:
-    uses: AztecProtocol/aztec-benchmark/.github/workflows/update-baseline.yml@c55ffd7470d4792ca106c31f2c1d1d5c5697079a # v5.0.0
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/update-baseline.yml@39244c9306f7b460aec570297100f3513f7ef936 # v5.0.1
     with:
       runner: ubuntu-latest
     permissions:

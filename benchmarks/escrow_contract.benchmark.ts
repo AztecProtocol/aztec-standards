@@ -6,8 +6,8 @@ import { AztecAddress } from '@aztec/aztec.js/addresses';
 import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
 
 // Import the new Benchmark base class and context
-import { Benchmark, BenchmarkContext } from '@aztec/aztec-benchmark';
-import type { NamedBenchmarkedInteraction } from '@aztec/aztec-benchmark/dist/types.js';
+import { Benchmark, BenchmarkContext } from '@aztec-foundation/aztec-benchmark';
+import type { NamedBenchmarkedInteraction } from '@aztec-foundation/aztec-benchmark/dist/types.js';
 
 // Import artifacts
 import { TokenContract } from '../src/artifacts/Token.js';
