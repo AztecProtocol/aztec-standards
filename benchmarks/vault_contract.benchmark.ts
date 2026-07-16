@@ -6,7 +6,7 @@ import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/auth
 import { parseUnits } from 'viem';
 
 // Import the new Benchmark base class and context
-import { Benchmark, BenchmarkContext } from '@aztec/aztec-benchmark';
+import { Benchmark, BenchmarkContext } from '@aztec-foundation/aztec-benchmark';
 
 import { TokenContract } from '../src/artifacts/Token.js';
 import { VaultContract } from '../src/artifacts/Vault.js';
