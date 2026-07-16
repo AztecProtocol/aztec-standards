@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_NAME="@aztec/aztec-standards"
+PROJECT_NAME="@aztec-foundation/aztec-standards"
 EXPORT_DIR="export/${PROJECT_NAME}"
 
 # ── Compile artifacts to JS ──────────────────────────────────────────────────

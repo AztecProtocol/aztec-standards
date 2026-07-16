@@ -3,7 +3,7 @@ import { AztecAddress } from '@aztec/aztec.js/addresses';
 import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
 
 // Import the new Benchmark base class and context
-import { Benchmark, BenchmarkContext } from '@aztec/aztec-benchmark';
+import { Benchmark, BenchmarkContext } from '@aztec-foundation/aztec-benchmark';
 
 import { NFTContract } from '../src/artifacts/NFT.js';
 import { deployNFTWithMinter, setupTestSuite } from '../src/ts/test/utils.js';

@@ -7,7 +7,7 @@ import { getContractClassFromArtifact } from '@aztec/aztec.js/contracts';
 import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
 
 // Import the new Benchmark base class and context
-import { Benchmark, BenchmarkContext } from '@aztec/aztec-benchmark';
+import { Benchmark, BenchmarkContext } from '@aztec-foundation/aztec-benchmark';
 
 // Import artifacts
 import { EscrowContract, EscrowContractArtifact } from '../src/artifacts/Escrow.js';
