@@ -45,7 +45,6 @@ interface WalletWithInternals {
     from: AztecAddress,
     feeOptions: FeeOptions,
   ): Promise<TxExecutionRequest>;
-  scopesFrom(from: AztecAddress): AztecAddress[];
   pxe: {
     proveTx(
       txRequest: TxExecutionRequest,
@@ -450,7 +449,7 @@ export async function initializeTransferCommitment(
   const w = token.wallet as unknown as WalletWithInternals;
   const feeOptions = await w.completeFeeOptions(caller, executionPayload.feePayer, undefined);
   const txRequest = await w.createTxExecutionRequestFromPayloadAndFee(executionPayload, caller, feeOptions);
-  const provenTx = await w.pxe.proveTx(txRequest, { scopes: w.scopesFrom(caller), senderForTags: caller });
+  const provenTx = await w.pxe.proveTx(txRequest, { scopes: [caller], senderForTags: caller });
 
   // Extract the commitment from the nested private execution results
   const entrypoint = provenTx.privateExecutionResult.entrypoint;
@@ -488,7 +487,7 @@ export async function initializeTransferCommitmentNFT(
   const w = nft.wallet as unknown as WalletWithInternals;
   const feeOptions = await w.completeFeeOptions(caller, executionPayload.feePayer, undefined);
   const txRequest = await w.createTxExecutionRequestFromPayloadAndFee(executionPayload, caller, feeOptions);
-  const provenTx = await w.pxe.proveTx(txRequest, { scopes: w.scopesFrom(caller), senderForTags: caller });
+  const provenTx = await w.pxe.proveTx(txRequest, { scopes: [caller], senderForTags: caller });
 
   const entrypoint = provenTx.privateExecutionResult.entrypoint;
   const nestedResults = entrypoint.nestedExecutionResults;
@@ -839,7 +838,7 @@ export async function initializeMultiTokenTransferCommitment(
   const w = token.wallet as unknown as WalletWithInternals;
   const feeOptions = await w.completeFeeOptions(caller, executionPayload.feePayer, undefined);
   const txRequest = await w.createTxExecutionRequestFromPayloadAndFee(executionPayload, caller, feeOptions);
-  const provenTx = await w.pxe.proveTx(txRequest, { scopes: w.scopesFrom(caller), senderForTags: caller });
+  const provenTx = await w.pxe.proveTx(txRequest, { scopes: [caller], senderForTags: caller });
 
   const entrypoint = provenTx.privateExecutionResult.entrypoint;
   const nestedResults = entrypoint.nestedExecutionResults;
