@@ -50,6 +50,14 @@ export PATH="$HOME/.aztec/current/bin:$PATH"
 Confirm: `aztec --version`. If a local aztec-packages checkout was given, its toolchain can be used instead.
 
 ## Step 4 — local validation (prove the bump)
+Before running the checks, audit every local type/cast that exposes non-public Aztec APIs. These
+shims are not checked against the upstream class, so a normal TypeScript build can stay green after
+the real method signature changes:
+```bash
+rg -n 'WalletWithInternals|as unknown as.*Wallet|scopesFrom\(' src benchmarks scripts
+# Compare every matching shim/method with the target version in the aztec-packages source checkout.
+```
+
 Run in order; stop and diagnose on the first failure:
 ```bash
 yarn ccc                     # clean + compile + codegen against the new deps
@@ -59,8 +67,14 @@ yarn format:check
 yarn install --frozen-lockfile   # lockfile matches package.json
 yarn build                   # assembles export/<pkg>
 (cd export/@aztec-foundation/aztec-standards && npm publish --dry-run --access public)   # tarball sanity
-# yarn test:js — only if a local network is up (aztec start --local-network); needs no npm creds
+# With a local network up (aztec start --local-network; no npm creds needed):
+yarn test:js
+yarn bench
 ```
+If a local network is unavailable, record both commands as deferred and keep the PR in draft until
+the CI **JS Tests** and **Benchmark** jobs pass. Do not describe the bump as fully validated before
+those runtime checks are green.
+
 **Diagnosing failures:** a compile/test break is often a real API change in the new aztec version,
 not a repo bug. Use the **local aztec-packages checkout / `gh api` at the target ref** to diff the
 relevant internals and fix. See Gotchas.
@@ -81,6 +95,16 @@ When everything is green: commit, open a PR to `main`, let CI pass, merge. Then 
 - **v5 wallet API.** `createSchnorrAccount(secret, salt)` → now needs a 3rd `GrumpkinScalar` signing key;
   `Wallet` context types may need `EmbeddedWallet`. Deploy scripts derive the secret from the signing key
   (`deriveSecretKeyFromSigningKey`).
+- **Local wallet-internals shims hide upstream API drift.** `src/ts/test/utils.ts` casts wallets through
+  `unknown` to a hand-written `WalletWithInternals`, so typechecking only verifies that local interface —
+  not the real protected `BaseWallet` methods. Diff every shimmed method against both the old and target
+  aztec-packages tags. In v5.1, `scopesFrom(from, additionalScopes = [])` became
+  `scopesFrom(from, additionalScopes, sendMessagesAs)`; a stale one-argument shim compiled but crashed at
+  runtime with `additionalScopes is not iterable`. Prefer constructing simple scopes directly (for a
+  concrete `caller`, `[caller]`) instead of reaching through to this protected helper.
+- **Network-only checks catch what typechecking cannot.** Both JS tests and benchmarks execute the wallet
+  internals used by commitment helpers. Run `yarn test:js` and `yarn bench` against a local network, or
+  require their CI jobs to pass before calling the bump validated.
 - **Benchmark peerDep / duplicate tree.** If `benchmarks/*.ts` typecheck shows `_branding` /
   `.../aztec-benchmark/node_modules/@aztec/...` errors, the benchmark pulled a *second* `@aztec` tree —
   it must be on a version whose `@aztec/*` are `peerDependencies` matching this repo's aztec version.
