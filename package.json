@@ -1,6 +1,6 @@
 {
   "name": "@aztec-foundation/aztec-standards",
-  "version": "5.1.0",
+  "version": "5.1.0-rc.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AztecProtocol/aztec-standards.git"
