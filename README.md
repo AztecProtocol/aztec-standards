@@ -4,6 +4,17 @@
 
 Aztec Standards is a comprehensive collection of reusable, standardized contracts for the Aztec Network. It provides a robust foundation of token primitives and utilities that support both private and public operations, empowering developers to build innovative privacy-preserving applications with ease.
 
+## ⚠️ Security Status: Unaudited
+
+> [!WARNING]
+> **This code has not been audited. Do not use it in production or to secure assets of value.**
+>
+> The contracts in this repository are experimental, unaudited software under active development. They have not undergone any external security review, audit, or formal verification, and they may contain bugs, security vulnerabilities, or economic flaws that could result in the irrecoverable loss of funds.
+>
+> The software is provided on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied (see [LICENSE](LICENSE)). Anyone deploying or interacting with these contracts does so entirely at their own risk, and is responsible for obtaining their own independent security review. No representation is made that the code is free of defects, and nothing here should be relied upon as security, legal, or financial advice.
+>
+> This notice will be updated if and when an audit is completed.
+
 ## Development
 
 **Prerequisite**: Start an Aztec local network in a separate terminal:
@@ -18,6 +29,7 @@ aztec start --local-network
 Set `NODE_URL` to override the default (e.g. `http://localhost:9000`).
 
 ## Table of Contents
+- [Security Status: Unaudited](#️-security-status-unaudited)
 - [Development](#development)
 - [Dripper Contract](#dripper-contract)
 - [Token Contract](#token-contract)
@@ -25,6 +37,7 @@ Set `NODE_URL` to override the default (e.g. `http://localhost:9000`).
 - [NFT Contract](#nft-contract)
 - [Escrow Standard Contract & Library](#escrow-standard-contract--library)
 - [Future Contracts](#future-contracts)
+- [License](#license)
 
 ## Dripper Contract
 
@@ -67,3 +80,7 @@ To see examples of Logic contract implementations, such as a linear vesting cont
 ## Future Contracts
 
 Additional standardized contracts (e.g., staking, governance, pools) will be added under this repository, with descriptions and function lists.
+
+## License
+
+Released under the [MIT License](LICENSE).
