@@ -4,6 +4,10 @@
 
 Aztec Standards is a comprehensive collection of reusable, standardized contracts for the Aztec Network. It provides a robust foundation of token primitives and utilities that support both private and public operations, empowering developers to build innovative privacy-preserving applications with ease.
 
+## Security Review Status
+
+This repository is developed with security best practices in mind, including testing and review as part of ongoing development. The contracts and supporting code have not yet undergone a formal third-party security audit. Treat this package as unaudited code: review it carefully, test it for your integration, and use appropriate safeguards before relying on it in production.
+
 ## Development
 
 **Prerequisite**: Start an Aztec local network in a separate terminal:
@@ -18,6 +22,7 @@ aztec start --local-network
 Set `NODE_URL` to override the default (e.g. `http://localhost:9000`).
 
 ## Table of Contents
+- [Security Review Status](#security-review-status)
 - [Development](#development)
 - [Dripper Contract](#dripper-contract)
 - [Token Contract](#token-contract)

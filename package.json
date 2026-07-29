@@ -1,6 +1,7 @@
 {
   "name": "@aztec-foundation/aztec-standards",
   "version": "5.1.0",
+  "description": "Reusable Aztec Network contract standards and utilities for privacy-preserving applications. See README for current security review status.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AztecProtocol/aztec-standards.git"
