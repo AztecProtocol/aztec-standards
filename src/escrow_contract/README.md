@@ -150,7 +150,9 @@ secret_key (Field)
     ├── SHA512(sk || DOM_SEP__NHK_M)  mod Fq  →  nhk_m (EmbeddedCurveScalar)  →  npk_m
     ├── SHA512(sk || DOM_SEP__IVSK_M) mod Fq  →  ivsk_m (EmbeddedCurveScalar) →  ivpk_m
     ├── SHA512(sk || DOM_SEP__OVSK_M) mod Fq  →  ovsk_m (EmbeddedCurveScalar) →  ovpk_m
-    └── SHA512(sk || DOM_SEP__TSK_M)  mod Fq  →  tsk_m (EmbeddedCurveScalar)  →  tpk_m
+    ├── SHA512(sk || DOM_SEP__TSK_M)  mod Fq  →  tsk_m (EmbeddedCurveScalar)  →  tpk_m
+    ├── SHA512(sk || DOM_SEP__MSSK_M) mod Fq  →  mssk_m (EmbeddedCurveScalar) →  mspk_m
+    └── SHA512(sk || DOM_SEP__FBSK_M) mod Fq  →  fbsk_m (EmbeddedCurveScalar) →  fbpk_m
 ```
 
 ### Usage
@@ -178,10 +180,21 @@ pub fn secret_key_to_public_keys(secret_key: Field) -> PublicKeys { /* ... */ }
 
 #### derive_keys
 ```rust
-/// @notice Derive all four master secret keys from a secret key.
+/// @notice Derive all six master secret keys from a secret key.
 /// @param secret_key The secret key
-/// @return MasterSecretKeys containing nhk_m, ivsk_m, ovsk_m, tsk_m (as EmbeddedCurveScalar).
+/// @return MasterSecretKeys containing nhk_m, ivsk_m, ovsk_m, tsk_m, mssk_m, fbsk_m (as EmbeddedCurveScalar).
 pub fn derive_keys(secret_key: Field) -> MasterSecretKeys { /* ... */ }
+```
+
+#### derive_master_* (individual keys)
+```rust
+/// Each master secret key can also be derived individually:
+pub fn derive_master_nullifier_hiding_key(secret_key: Field) -> EmbeddedCurveScalar;        // nhk_m
+pub fn derive_master_incoming_viewing_secret_key(secret_key: Field) -> EmbeddedCurveScalar; // ivsk_m
+pub fn derive_master_outgoing_viewing_secret_key(secret_key: Field) -> EmbeddedCurveScalar; // ovsk_m
+pub fn derive_master_tagging_secret_key(secret_key: Field) -> EmbeddedCurveScalar;          // tsk_m
+pub fn derive_master_message_signing_secret_key(secret_key: Field) -> EmbeddedCurveScalar;  // mssk_m
+pub fn derive_master_fallback_secret_key(secret_key: Field) -> EmbeddedCurveScalar;         // fbsk_m
 ```
 
 #### master_secret_keys_to_public_keys
