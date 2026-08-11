@@ -31,13 +31,25 @@ Set `NODE_URL` to override the default (e.g. `http://localhost:9000`).
 ## Table of Contents
 - [Security Status: Unaudited](#️-security-status-unaudited)
 - [Development](#development)
+- [Standards & Naming (AIP vs ARC)](#standards--naming-aip-vs-arc)
 - [Dripper Contract](#dripper-contract)
 - [Token Contract](#token-contract)
+- [MultiToken Contract](#multitoken-contract)
 - [Vault Contract](#vault-contract)
+- [Vault Deployer Contract](#vault-deployer-contract)
 - [NFT Contract](#nft-contract)
 - [Escrow Standard Contract & Library](#escrow-standard-contract--library)
-- [Future Contracts](#future-contracts)
+- [Scope & Maintenance](#scope--maintenance)
 - [License](#license)
+
+## Standards & Naming (AIP vs ARC)
+
+Two proposal-numbering tracks appear in this repository, and they are not interchangeable:
+
+- **AIP-x** — Aztec Improvement Proposals published as RFCs on the [Aztec forum](https://forum.aztec.network). This repository implements [AIP-20](https://forum.aztec.network/t/request-for-comments-aip-20-aztec-token-standard/7737) (Token) and [AIP-4626](https://forum.aztec.network/t/request-for-comments-aip-4626-tokenized-vault/8079) (Vault). Both are drafts under discussion, not ratified standards.
+- **ARC-x** — Aztec Request for Comments, a separate track. The Token and MultiToken contracts implement [ARC-403](https://forum.aztec.network/t/arc-403-authtoken/7887), an optional authorization-hook extension (compliance checks on transfers via an external authorization contract). The ARC-403 spec is still under active discussion; the implementation here tracks the draft.
+
+There is no "AIP-403" — if you have seen that name, it refers to ARC-403.
 
 ## Dripper Contract
 
@@ -49,9 +61,15 @@ The `Dripper` contract provides a convenient faucet mechanism for minting tokens
 
 The `Token` contract implements an ERC-20-like token with Aztec-specific privacy extensions. It supports transfers and interactions explicitly through private balances and public balances, offering full coverage of Aztec's confidentiality features.
 
-We published the [AIP-20 Aztec Token Standard](https://forum.aztec.network/t/request-for-comments-aip-20-aztec-token-standard/7737) to the forum. Feel free to review and discuss the specification there.
+We published the [AIP-20 Aztec Token Standard](https://forum.aztec.network/t/request-for-comments-aip-20-aztec-token-standard/7737) to the forum. Feel free to review and discuss the specification there. The token optionally implements the [ARC-403](https://forum.aztec.network/t/arc-403-authtoken/7887) authorization hook (draft).
 
 📖 **[View detailed Token documentation](src/token_contract/README.md)**
+
+## MultiToken Contract
+
+The `MultiToken` contract implements an ERC-1155-like multi-token (many token ids under one contract) with Aztec-specific privacy extensions: per-id private and public balances, partial-note commitments for public→private transfers, and the [ARC-403](https://forum.aztec.network/t/arc-403-authtoken/7887) authorization hook (draft).
+
+📖 **[View detailed MultiToken documentation](src/multitoken_contract/README.md)**
 
 ## Vault Contract
 
@@ -59,7 +77,16 @@ The `Vault` contract is a standalone yield-bearing vault that holds an underlyin
 
 We published the [AIP-4626: Tokenized Vault Standard](https://forum.aztec.network/t/request-for-comments-aip-4626-tokenized-vault/8079) to the forum. Feel free to review and discuss the specification there.
 
+> [!WARNING]
+> The Vault is **not production-ready**, even by this repository's unaudited standards: it has a [known overflow issue in the asset↔share conversion logic](src/vault_contract/README.md) and known privacy limitations documented in its README. No fix is currently scheduled.
+
 📖 **[View detailed Vault documentation](src/vault_contract/README.md)**
+
+## Vault Deployer Contract
+
+The `VaultDeployer` contract deploys and links a `Vault` and its shares `Token` in a single transaction. It exists as a workaround until [public contract-instance registration](https://github.com/AztecProtocol/aztec-packages/issues/20771) lands upstream; without it, a vault and its shares token cannot be deployed and wired together atomically.
+
+📖 **[View detailed Vault Deployer documentation](src/vault_deployer/README.md)**
 
 ## NFT Contract
 
@@ -70,16 +97,16 @@ The `NFT` contract implements an ERC-721-like non-fungible token with Aztec-spec
 ## Escrow Standard Contract & Library
 
 The Escrow Standard contains two elements:
-- Escrow Contract: a minimal private contract designed to have keys with which authorized callers can spend private balances of tokens and NFTs compliants with AIP-20 and AIP-721, respectively.
+- Escrow Contract: a minimal private contract designed to have keys with which authorized callers can spend private balances of AIP-20 tokens and of the NFT contract in this repository.
 - Logic Library: a set of contract library methods that standardizes and facilitates the management of Escrow contracts from another contract, a.k.a. the Logic contract. 
 
 📖 **[View detailed Escrow documentation](src/escrow_contract/README.md)**
 
 To see examples of Logic contract implementations, such as a linear vesting contract or a clawback escrow contract, go to [aztec-escrow-extensions](https://github.com/defi-wonderland/aztec-escrow-extensions).
 
-## Future Contracts
+## Scope & Maintenance
 
-Additional standardized contracts (e.g., staking, governance, pools) will be added under this repository, with descriptions and function lists.
+The contracts above are the complete, intended scope of this repository. The Aztec Foundation maintains them (dependency bumps, bug fixes, spec alignment), but **no new standards are planned unless there is clear ecosystem demand**. If you need a standard that isn't here — or want one of the draft specs (AIP-20, AIP-4626, ARC-403) pushed toward finalization — say so on the [Aztec forum](https://forum.aztec.network) or open a GitHub issue on this repository. Demand is what gets things built.
 
 ## License
 
