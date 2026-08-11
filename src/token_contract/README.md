@@ -44,7 +44,7 @@ The contract emits a public `Transfer { from, to, amount }` event on every balan
 ### constructor_with_initial_supply
 ```rust
 /// @notice Initializes the token with an initial supply
-/// @dev Since this constructor doesn't set a minter address the mint functions will be disabled
+/// @dev The minter is initialized to the zero address, so the mint functions are disabled
 /// @param name The name of the token
 /// @param symbol The symbol of the token
 /// @param decimals The number of decimals of the token
@@ -137,6 +137,15 @@ fn decimals() -> u8 { /* ... */ }
 #[public]
 #[view]
 fn get_auth_contract() -> AztecAddress { /* ... */ }
+```
+
+### get_minter
+```rust
+/// @notice Returns the authorized minter address
+/// @return The minter address (zero address means minting is disabled)
+#[public]
+#[view]
+fn get_minter() -> AztecAddress { /* ... */ }
 ```
 
 ## Utility Functions

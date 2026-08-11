@@ -62,7 +62,7 @@ pub contract Token {
     }
 
     /// @notice Initializes the token with an initial supply
-    /// @dev Since this constructor doesn't set a minter address the mint functions will be disabled
+    /// @dev The minter is initialized to the zero address, so the mint functions are disabled
     /// @param name The name of the token
     /// @param symbol The symbol of the token
     /// @param decimals The number of decimals of the token
@@ -83,6 +83,7 @@ pub contract Token {
         self.storage.symbol.initialize(FieldCompressedString::from_string(symbol));
         self.storage.decimals.initialize(decimals);
         self.storage.auth_contract.initialize(auth_contract);
+        self.storage.minter.initialize(AztecAddress::zero());
 
         self.internal._mint_to_public(to, initial_supply);
     }
@@ -384,6 +385,14 @@ pub contract Token {
     #[view]
     fn get_auth_contract() -> AztecAddress {
         self.storage.auth_contract.read()
+    }
+
+    /// @notice Returns the authorized minter address
+    /// @return The minter address (zero address means minting is disabled)
+    #[external("public")]
+    #[view]
+    fn get_minter() -> AztecAddress {
+        self.storage.minter.read()
     }
 
     /** ==========================================================
