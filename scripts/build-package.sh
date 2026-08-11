@@ -41,7 +41,7 @@ cp README.md "${EXPORT_DIR}/"
 cp LICENSE "${EXPORT_DIR}/"
 
 # Create trimmed package.json (strip dev-only fields)
-jq 'del(.scripts, .jest, ."lint-staged", .packageManager, .devDependencies, .dependencies, .engines, .resolutions)' \
+jq 'del(.scripts, ."lint-staged", .packageManager, .devDependencies, .dependencies, .engines, .resolutions)' \
   package.json > "${EXPORT_DIR}/package.json"
 
 echo "✔ Package prepared at ${EXPORT_DIR}"

@@ -29,7 +29,8 @@ export interface DeploymentConfig {
   };
 }
 
-// TODO: add mainnet-alpha
+// Deployments are intentionally limited to development networks. A mainnet
+// network entry would be a deliberate Foundation decision, not a pending task.
 export type Network = 'devnet' | 'testnet' | 'local-network';
 
 const TOKENS: Record<string, TokenConfig> = {

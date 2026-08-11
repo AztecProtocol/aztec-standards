@@ -5,7 +5,7 @@
     "type": "git",
     "url": "git+https://github.com/AztecProtocol/aztec-standards.git"
   },
-  "author": "Wonderland",
+  "author": "Aztec Foundation",
   "license": "MIT",
   "type": "module",
   "scripts": {
