@@ -2,7 +2,7 @@
 
 The `Dripper` contract provides a convenient faucet mechanism for minting tokens into private or public balances. Anyone can easily invoke the functions below to request tokens for testing or development purposes.
 
-> **Note**: This contract is designed for development and testing environments only. Do not use in production.
+> **Note**: This contract is designed for development and testing environments only. Do not use in production. As a dev utility rather than a standard, it is intentionally outside the repository's automated test scope.
 
 ## Public Functions
 

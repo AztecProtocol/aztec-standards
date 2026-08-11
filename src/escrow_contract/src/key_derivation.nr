@@ -126,7 +126,7 @@ pub fn derive_master_fallback_secret_key(secret_key: Field) -> EmbeddedCurveScal
     sha512_to_grumpkin_scalar(secret_key, DOM_SEP__FBSK_M)
 }
 
-/// Derive all four master secret keys at once from a secret key
+/// Derive all six master secret keys at once from a secret key
 /// Optimized to serialize the secret key only once and reuse the buffer
 pub fn derive_keys(secret_key: Field) -> MasterSecretKeys {
     let sk_bytes: [u8; 32] = secret_key.to_be_bytes();

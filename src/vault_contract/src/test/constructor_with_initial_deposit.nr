@@ -9,8 +9,9 @@ use aztec::protocol::address::AztecAddress;
 use token_contract::test::utils::{check_total_supply, get_total_supply};
 use token_contract::Token;
 
-// TODO: When salt setting in env deployment is supported we can precompute the vault address and
-// compute the authwit before deployment. Deployment use constructor_with_asset for now.
+// NOTE: If salt setting in env deployment ever becomes supported, the vault address could be
+// precomputed and the authwit created before deployment. Until then these tests deploy first
+// (see setup_with_vault_initial_deposit) and create the authwit afterwards.
 
 #[test]
 unconstrained fn vault_with_initial_deposit_success() {

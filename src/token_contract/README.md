@@ -10,7 +10,7 @@ This contract follows the [AIP-20 Aztec Token Standard](https://forum.aztec.netw
 
 ## ARC-403: Authorization Hook
 
-This contract also implements ARC-403, an optional authorization hook that calls an external **authorization contract** on every transfer and burn. This enables compliance policies (KYC, allowlists, transfer caps, sanctions screening, audit logging, pausability, etc.) to be plugged in without changing the token interface. If no authorization contract is set, the token behaves as a standard ARC-20. See [ARC-403 Authorization Hook](#arc-403-authorization-hook-1) for details.
+This contract also implements [ARC-403](https://forum.aztec.network/t/arc-403-authtoken/7887), an optional authorization hook that calls an external **authorization contract** on every transfer and burn. This enables compliance policies (KYC, allowlists, transfer caps, sanctions screening, audit logging, pausability, etc.) to be plugged in without changing the token interface. If no authorization contract is set, the token behaves as a standard AIP-20 token. The ARC-403 specification is a draft under active discussion; this implementation tracks the draft. See [ARC-403 Authorization Hook](#arc-403-authorization-hook-1) for details.
 
 ## Transfer Events
 
@@ -370,4 +370,16 @@ The authorization contract address is set at construction via the `auth_contract
 - **`to` is not forwarded to the hook.** The recipient cannot be provided consistently across all transfer flows (commitment-based transfers seal the recipient inside a hash preimage the sender never sees), so it is omitted entirely rather than passed inconsistently. As a result, a blocked sender can still receive funds, but might not be able to spend them.
 - **`transfer_public_to_private` is not fully private.** It calls `authorize_private`, but spending a public balance inherently reveals `from` and `amount` on-chain regardless of any privacy the authorization contract provides. Authorization contracts can use the `selector` argument to distinguish this case.
 
-Reference implementations of authorization contracts (allowlist, signature-by-authority, transfer accumulator, pausable, etc.) can be found in the [aztec-arc403-extensions](https://github.com/defi-wonderland/aztec-arc403-extensions) repository.
+Design discussion and example authorization policies (allowlist, signature-by-authority, transfer caps, pausable, etc.) live in the [ARC-403 forum thread](https://forum.aztec.network/t/arc-403-authtoken/7887). No maintained reference-implementation repository currently exists.
+
+## Internal Functions
+
+These functions are part of the on-chain ABI but are `#[only_self]` — they can only be called by the token contract itself (enqueued from its own private executions). They are listed for completeness; external callers cannot invoke them.
+
+| Function | Context | Purpose |
+|----------|---------|---------|
+| `recurse_subtract_balance_internal(account, amount) -> u128` | private | Continues subtracting private balance when a spend exceeds the per-call note limit |
+| `increase_public_balance_internal(to, amount)` | public | Credits a public balance during a private→public flow; emits `Transfer` |
+| `decrease_public_balance_internal(from, amount)` | public | Debits a public balance during a public→private flow; emits `Transfer` |
+| `increase_total_supply_internal(amount)` | public | Updates total supply for private mints; emits `Transfer` |
+| `decrease_total_supply_internal(amount)` | public | Updates total supply for private burns; emits `Transfer` |
