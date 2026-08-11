@@ -21,8 +21,8 @@ pub contract Token {
     use compressed_string::FieldCompressedString;
     // private balance library
     use balance_set::BalanceSet;
-    // authorization hook contract
-    use authorization_contract::AuthorizationContract;
+    // ARC-403 authorization hook interface (draft; see src/arc403_interface)
+    use arc403_interface::Arc403Authorizer;
 
     // gas-optimized max notes for initial transfer call
     global INITIAL_TRANSFER_CALL_MAX_NOTES: u32 = 2;
@@ -505,7 +505,7 @@ pub contract Token {
         let auth = self.storage.auth_contract.read();
         if !auth.eq(AztecAddress::zero()) {
             let selector = self.context.selector().to_field();
-            self.call(AuthorizationContract::at(auth).authorize_public(from, amount, selector));
+            self.call(Arc403Authorizer::at(auth).authorize_public(from, amount, selector));
         }
     }
 
@@ -520,7 +520,7 @@ pub contract Token {
         let auth = self.storage.auth_contract.read();
         if !auth.eq(AztecAddress::zero()) {
             let selector = self.context.selector().to_field();
-            self.call(AuthorizationContract::at(auth).authorize_private(from, amount, selector));
+            self.call(Arc403Authorizer::at(auth).authorize_private(from, amount, selector));
         }
     }
 

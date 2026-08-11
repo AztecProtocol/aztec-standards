@@ -370,7 +370,7 @@ The authorization contract address is set at construction via the `auth_contract
 - **`to` is not forwarded to the hook.** The recipient cannot be provided consistently across all transfer flows (commitment-based transfers seal the recipient inside a hash preimage the sender never sees), so it is omitted entirely rather than passed inconsistently. As a result, a blocked sender can still receive funds, but might not be able to spend them.
 - **`transfer_public_to_private` is not fully private.** It calls `authorize_private`, but spending a public balance inherently reveals `from` and `amount` on-chain regardless of any privacy the authorization contract provides. Authorization contracts can use the `selector` argument to distinguish this case.
 
-Design discussion and example authorization policies (allowlist, signature-by-authority, transfer caps, pausable, etc.) live in the [ARC-403 forum thread](https://forum.aztec.network/t/arc-403-authtoken/7887). No maintained reference-implementation repository currently exists.
+The canonical hook interface lives in [`src/arc403_interface`](../arc403_interface/README.md) — implement its `Arc403Authorizer` signatures to write an authorization contract. Design discussion and example authorization policies (allowlist, signature-by-authority, transfer caps, pausable, etc.) live in the [ARC-403 forum thread](https://forum.aztec.network/t/arc-403-authtoken/7887). No maintained reference-implementation repository currently exists.
 
 ## Internal Functions
 
