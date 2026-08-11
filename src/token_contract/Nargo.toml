@@ -10,4 +10,5 @@ uint_note = { git = "https://github.com/AztecProtocol/aztec-packages/", tag = "v
 balance_set = { git = "https://github.com/AztecProtocol/aztec-packages/", tag = "v5.1.0", directory = "noir-projects/aztec-nr/balance-set" }
 compressed_string = { git = "https://github.com/AztecProtocol/aztec-packages/", tag = "v5.1.0", directory = "noir-projects/aztec-nr/compressed-string" }
 generic_proxy = { path = "../generic_proxy" }
+arc403_interface = { path = "../arc403_interface" }
 authorization_contract = { path = "src/test/test_authorization_contract" }

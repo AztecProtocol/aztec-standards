@@ -1,5 +1,7 @@
 [workspace]
 members = [
+"src/arc403_interface",
+"src/arc403_interface/multitoken",
 "src/token_contract",
 "src/token_contract/src/test/test_authorization_contract",
 "src/vault_contract",

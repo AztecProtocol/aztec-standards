@@ -17,8 +17,8 @@ pub contract MultiToken {
     };
     // compression library
     use compressed_string::FieldCompressedString;
-    // authorization hook contract (id-bearing ARC-403 interface)
-    use multitoken_authorization_contract::MultiTokenAuthorizationContract;
+    // ARC-403 authorization hook interface, id-bearing variant (draft; see src/arc403_interface)
+    use arc403_multitoken_interface::Arc403MultiTokenAuthorizer;
     // multitoken note structs + per-id balance set (owner-scoped wrapper over PrivateSet<MultiTokenNote>)
     use crate::types::{
         balance::MultiBalanceSet,
@@ -464,7 +464,7 @@ pub contract MultiToken {
         let auth = self.storage.auth_contract.read();
         if !auth.eq(AztecAddress::zero()) {
             let selector = self.context.selector().to_field();
-            self.call(MultiTokenAuthorizationContract::at(auth).authorize_public(
+            self.call(Arc403MultiTokenAuthorizer::at(auth).authorize_public(
                 from,
                 id,
                 amount,
@@ -484,7 +484,7 @@ pub contract MultiToken {
         let auth = self.storage.auth_contract.read();
         if !auth.eq(AztecAddress::zero()) {
             let selector = self.context.selector().to_field();
-            self.call(MultiTokenAuthorizationContract::at(auth).authorize_private(
+            self.call(Arc403MultiTokenAuthorizer::at(auth).authorize_private(
                 from,
                 id,
                 amount,
