@@ -192,9 +192,7 @@ describe('Token', () => {
     expect((await token.methods.balance_of_public(bob).simulate({ from: carl })).result).toBe(AMOUNT);
   }, 300_000);
 
-  // Skipped: requires `additionalScopes` (not yet available) so carl's PXE can
-  // discover alice's private notes when carl submits the tx.
-  it.skip('private transfer with authwitness', async () => {
+  it('private transfer with authwitness', async () => {
     // setup balances
     const { receipt: mintTx } = await token
       .withWallet(wallet)
@@ -236,7 +234,13 @@ describe('Token', () => {
     expect(validity.isValidInPrivate).toBeTruthy();
     expect(validity.isValidInPublic).toBeFalsy();
 
-    const { receipt: privateTx } = await action.send({ from: carl, authWitnesses: [witness] });
+    // additionalScopes includes alice so carl's PXE can access alice's notes (balance and
+    // account-contract signing key) needed to build and verify the authorized private spend
+    const { receipt: privateTx } = await action.send({
+      from: carl,
+      authWitnesses: [witness],
+      additionalScopes: [alice],
+    });
 
     // transfer_private_to_private: (no public events)
     await expectTransferEvents(privateTx.txHash, token.address, []);
