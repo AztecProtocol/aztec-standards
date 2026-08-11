@@ -51,7 +51,12 @@ describe('Vault', () => {
     const { nonce = 0, caller = from } = options;
     const transfer = asset.methods.transfer_public_to_public(from, vault.address, amount, nonce);
     await setPublicAuthWit(vault.address, transfer, from, wallet);
-    const { receipt } = await action.send({ from: caller });
+    // additionalScopes lets a third-party submitter's PXE access the owner's notes; see
+    // callVaultWithPrivateAuthWit for details
+    const { receipt } = await action.send({
+      from: caller,
+      ...(caller.equals(from) ? {} : { additionalScopes: [from] }),
+    });
     return receipt.txHash;
   }
 
@@ -64,7 +69,13 @@ describe('Vault', () => {
     const { nonce = 0, caller = from } = options;
     const transfer = asset.methods.transfer_private_to_public(from, vault.address, amount, nonce);
     const transferAuthWitness = await setPrivateAuthWit(vault.address, transfer, from, wallet);
-    const { receipt } = await action.with({ authWitnesses: [transferAuthWitness] }).send({ from: caller });
+    // When a third party submits, additionalScopes includes the owner so the submitter's PXE
+    // can access the owner's notes (balances and account-contract signing key); the sender's
+    // own scope is always included by default
+    const { receipt } = await action.with({ authWitnesses: [transferAuthWitness] }).send({
+      from: caller,
+      ...(caller.equals(from) ? {} : { additionalScopes: [from] }),
+    });
     return receipt.txHash;
   }
 
@@ -665,9 +676,7 @@ describe('Vault', () => {
       TEST_TIMEOUT,
     );
 
-    // Skipped: requires `additionalScopes` (not yet available) so carl's PXE can
-    // access alice's/bob's private notes when carl submits the tx.
-    it.skip(
+    it(
       'Private assets, Public shares: Alice deposits/withdraws, Bob issues/redeems',
       async () => {
         // Mint some assets to Alice and Bob for deposit/issue
@@ -757,9 +766,7 @@ describe('Vault', () => {
       TEST_TIMEOUT,
     );
 
-    // Skipped: requires `additionalScopes` (not yet available) so carl's PXE can
-    // access alice's/bob's private notes when carl submits the tx.
-    it.skip(
+    it(
       'Public assets, Private shares: Alice deposits/withdraws, Bob issues/redeems',
       async () => {
         // Mint some assets to Alice and Bob for deposit/issue
@@ -823,7 +830,7 @@ describe('Vault', () => {
         const withdrawAuthWitness = await setPrivateAuthWit(carl, withdrawAction, alice, wallet);
         const { receipt: withdrawTx } = await withdrawAction
           .with({ authWitnesses: [withdrawAuthWitness, burnAuthWit] })
-          .send({ from: carl });
+          .send({ from: carl, additionalScopes: [alice] });
         await expectTransferEvents(withdrawTx.txHash, shares.address, [
           { from: PRIVATE_ADDRESS, to: AztecAddress.ZERO, amount: BigInt(sharesAlice) },
         ]);
@@ -837,7 +844,7 @@ describe('Vault', () => {
         const redeemAuthWitness = await setPrivateAuthWit(carl, redeemAction, bob, wallet);
         const { receipt: redeemTx } = await redeemAction
           .with({ authWitnesses: [redeemAuthWitness, burnAuthWitBob] })
-          .send({ from: carl });
+          .send({ from: carl, additionalScopes: [bob] });
         await expectTransferEvents(redeemTx.txHash, shares.address, [
           { from: PRIVATE_ADDRESS, to: AztecAddress.ZERO, amount: BigInt(sharesBob) },
         ]);
@@ -859,9 +866,7 @@ describe('Vault', () => {
       TEST_TIMEOUT,
     );
 
-    // Skipped: requires `additionalScopes` (not yet available) so carl's PXE can
-    // access alice's/bob's private notes when carl submits the tx.
-    it.skip(
+    it(
       'Private assets, Private shares: Alice deposits/withdraws, Bob issues/redeems',
       async () => {
         // Mint some assets to Alice and Bob for deposit/issue
@@ -919,7 +924,7 @@ describe('Vault', () => {
         const withdrawAuthWitness = await setPrivateAuthWit(carl, withdrawAction, alice, wallet);
         const { receipt: withdrawTx } = await withdrawAction
           .with({ authWitnesses: [withdrawAuthWitness, burnAuthWit] })
-          .send({ from: carl });
+          .send({ from: carl, additionalScopes: [alice] });
         await expectTransferEvents(withdrawTx.txHash, shares.address, [
           { from: PRIVATE_ADDRESS, to: AztecAddress.ZERO, amount: BigInt(sharesAlice) },
         ]);
@@ -933,7 +938,7 @@ describe('Vault', () => {
         const redeemAuthWitness = await setPrivateAuthWit(carl, redeemAction, bob, wallet);
         const { receipt: redeemTx } = await redeemAction
           .with({ authWitnesses: [redeemAuthWitness, burnAuthWitBob] })
-          .send({ from: carl });
+          .send({ from: carl, additionalScopes: [bob] });
         await expectTransferEvents(redeemTx.txHash, shares.address, [
           { from: PRIVATE_ADDRESS, to: AztecAddress.ZERO, amount: BigInt(sharesBob) },
         ]);
@@ -952,9 +957,7 @@ describe('Vault', () => {
       TEST_TIMEOUT,
     );
 
-    // Skipped: requires `additionalScopes` (not yet available) so carl's PXE can
-    // access alice's/bob's private notes when carl submits the tx.
-    it.skip(
+    it(
       'Exact methods, Mixed Assets, Private shares: Alice deposits/withdraws, Bob deposits/withdraws',
       async () => {
         // Mint some assets to Alice and Bob for deposit/issue
@@ -1012,7 +1015,7 @@ describe('Vault', () => {
         const withdrawAuthWitness = await setPrivateAuthWit(carl, withdrawAction, alice, wallet);
         const { receipt: withdrawTx } = await withdrawAction
           .with({ authWitnesses: [withdrawAuthWitness, burnAuthWit] })
-          .send({ from: carl });
+          .send({ from: carl, additionalScopes: [alice] });
         await expectTransferEvents(withdrawTx.txHash, shares.address, [
           { from: PRIVATE_ADDRESS, to: AztecAddress.ZERO, amount: BigInt(sharesAlice) },
         ]);
@@ -1026,7 +1029,7 @@ describe('Vault', () => {
         const publicWithdrawAuthWitness = await setPrivateAuthWit(carl, publicWithdrawAction, bob, wallet);
         const { receipt: withdrawBobTx } = await publicWithdrawAction
           .with({ authWitnesses: [publicWithdrawAuthWitness, burnAuthWitBob] })
-          .send({ from: carl });
+          .send({ from: carl, additionalScopes: [bob] });
         await expectTransferEvents(withdrawBobTx.txHash, shares.address, [
           { from: PRIVATE_ADDRESS, to: AztecAddress.ZERO, amount: BigInt(sharesBob) },
         ]);

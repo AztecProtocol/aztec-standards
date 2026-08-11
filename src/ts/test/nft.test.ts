@@ -120,9 +120,7 @@ describe('NFT', () => {
     TEST_TIMEOUT,
   );
 
-  // Skipped: requires `additionalScopes` (not yet available) so bob's PXE can
-  // discover alice's private notes when bob submits the tx.
-  it.skip(
+  it(
     'transfers NFT from private to public with authorization',
     async () => {
       const tokenId = 1n;
@@ -144,7 +142,9 @@ describe('NFT', () => {
       });
 
       // Bob executes the transfer with alice's authorization
-      await transferCallInterface.send({ from: bob, authWitnesses: [witness] });
+      // additionalScopes includes alice so bob's PXE can access alice's notes (the NFT note
+      // and account-contract signing key) needed for the authorized private spend
+      await transferCallInterface.send({ from: bob, authWitnesses: [witness], additionalScopes: [alice] });
 
       // Verify alice no longer owns the NFT privately
       await assertOwnsPrivateNFT(nft, tokenId, alice, false);
@@ -157,9 +157,7 @@ describe('NFT', () => {
 
   // --- Transfer tests: private to public with commitment ---
 
-  // Skipped: requires `additionalScopes` (not yet available) so bob's PXE can
-  // discover alice's private notes when bob submits the tx.
-  it.skip(
+  it(
     'transfers NFT from private to public with commitment and authorization',
     async () => {
       const tokenId = 1n;
@@ -181,7 +179,9 @@ describe('NFT', () => {
       });
 
       // Bob executes the transfer with alice's authorization
-      await transferCallInterface.send({ from: bob, authWitnesses: [witness] });
+      // additionalScopes includes alice so bob's PXE can access alice's notes (the NFT note
+      // and account-contract signing key) needed for the authorized private spend
+      await transferCallInterface.send({ from: bob, authWitnesses: [witness], additionalScopes: [alice] });
 
       // Verify alice no longer owns the NFT privately
       await assertOwnsPrivateNFT(nft, tokenId, alice, false);
