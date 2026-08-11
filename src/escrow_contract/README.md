@@ -11,7 +11,7 @@ Logic contract implementations may vary greatly among use cases, but the basic p
 The Escrow contract is a minimally designed private contract with the following important characteristics:
 - Needs to be setup with keys. This allows the Escrow to hold private balances.
 - Does not need to be publicly deployed.
-- Has only two methods - `withdraw()` and `withdraw_nft()` - that allows the owner of the Escrow to spend private balances of tokens or NFTs compliant with AIP-20 and AIP-721, respectively. The keys are needed for these.
+- Has only two methods - `withdraw()` and `withdraw_nft()` - that allows the owner of the Escrow to spend private balances of AIP-20 compliant tokens or of the NFT contract in this repository, respectively. The keys are needed for these.
 - Is fully private. Tokens and NFTs can only be withdrawn from the Escrow to another private balance, which does not leak any information.
 - Only the owner can interact with the Escrow.
 - Does not have storage nor needs initialization. The owner of the Escrow is defined as an `AztecAddress` encoded into the contract instance salt, which means that its immutable and the Escrow address is determined by it.
