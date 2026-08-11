@@ -47,7 +47,10 @@ Set `NODE_URL` to override the default (e.g. `http://localhost:9000`).
 Two proposal-numbering tracks appear in this repository, and they are not interchangeable:
 
 - **AIP-x** — Aztec Improvement Proposals published as RFCs on the [Aztec forum](https://forum.aztec.network). This repository implements [AIP-20](https://forum.aztec.network/t/request-for-comments-aip-20-aztec-token-standard/7737) (Token) and [AIP-4626](https://forum.aztec.network/t/request-for-comments-aip-4626-tokenized-vault/8079) (Vault). Both are drafts under discussion, not ratified standards.
-- **ARC-x** — Aztec Request for Comments, a separate track. The Token and MultiToken contracts implement [ARC-403](https://forum.aztec.network/t/arc-403-authtoken/7887), an optional authorization-hook extension (compliance checks on transfers via an external authorization contract). The ARC-403 spec is still under active discussion; the implementation here tracks the draft.
+- **ARC-x** — Aztec Request for Comments, a separate track. The Token and MultiToken contracts implement [ARC-403](https://forum.aztec.network/t/arc-403-authtoken/7887), an optional authorization-hook extension (compliance checks on transfers via an external authorization contract). The ARC-403 spec is still under active discussion; the implementation here tracks the draft. The canonical hook interface lives in `src/arc403_interface`.
+
+> [!CAUTION]
+> The `Arc403Authorizer` and `Arc403MultiTokenAuthorizer` artifacts shipped with this package are **interface stubs with empty bodies**. They exist to define the ABI. Never deploy them or wire them as a token's `auth_contract` — an empty hook approves every operation. Deploy your own implementation of the interface instead.
 
 There is no "AIP-403" — if you have seen that name, it refers to ARC-403.
 
