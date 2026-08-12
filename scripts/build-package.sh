@@ -29,12 +29,9 @@ cp -r dist/artifacts/* "${EXPORT_DIR}/dist/"
 cp -r target "${EXPORT_DIR}/"
 find "${EXPORT_DIR}/target" -name '*.bak' -delete
 
-# Copy deployments.json if it exists
-if [ -f "src/deployments.json" ]; then
-  cp src/deployments.json "${EXPORT_DIR}/"
-else
-  echo "src/deployments.json not found, skipping"
-fi
+# deployments.json is intentionally NOT shipped: the recorded addresses were generated under a
+# pre-5.0 address-derivation formula and are stale. Re-add only after regenerating via
+# `yarn deploy` on a current network (and regenerate on every address-affecting @aztec/* bump).
 
 # Copy documentation
 cp README.md "${EXPORT_DIR}/"
