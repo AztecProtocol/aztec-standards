@@ -3,15 +3,18 @@ import { Command, Option } from 'commander';
 import { PublicKeys } from '@aztec/aztec.js/keys';
 import {
   getContractInstanceFromInstantiationParams,
+  getContractClassFromArtifact,
   Contract,
   type InteractionFeeOptions,
   DeployOptions,
 } from '@aztec/aztec.js/contracts';
 import { TxStatus } from '@aztec/aztec.js/tx';
+import { TX_ERROR_EXISTING_NULLIFIER } from '@aztec/stdlib/tx';
 import { AztecAddress } from '@aztec/aztec.js/addresses';
 import { Fr, GrumpkinScalar } from '@aztec/aztec.js/fields';
 import { SponsoredFeePaymentMethod } from '@aztec/aztec.js/fee';
 import { AccountManager, type Wallet } from '@aztec/aztec.js/wallet';
+import { NO_FROM } from '@aztec/aztec.js/account';
 import { createAztecNodeClient, type AztecNode } from '@aztec/aztec.js/node';
 import { createLogger } from '@aztec/foundation/log';
 
@@ -162,17 +165,9 @@ export async function createSponsoredFeeOptions(wallet: Wallet): Promise<Interac
     salt: new Fr(SPONSORED_FPC_SALT),
   });
 
-  try {
-    await wallet.registerContract(sponsoredFPCInstance, SponsoredFPCContract.artifact);
-    logger.info(`Registered SponsoredFPC at: ${sponsoredFPCInstance.address.toString()}`);
-  } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    if (msg.includes('already')) {
-      logger.debug('SponsoredFPC already registered');
-    } else {
-      throw error;
-    }
-  }
+  // registerContract is an idempotent upsert; no need to special-case re-registration
+  await wallet.registerContract(sponsoredFPCInstance, SponsoredFPCContract.artifact);
+  logger.info(`Registered SponsoredFPC at: ${sponsoredFPCInstance.address.toString()}`);
 
   const paymentMethod = new SponsoredFeePaymentMethod(sponsoredFPCInstance.address);
 
@@ -201,11 +196,13 @@ async function deployAccount(
   logger.info(`Deploying account contract at ${address.toString()}...`);
   try {
     const deployMethod = await manager.getDeployMethod();
-    const result = await deployMethod.send({ fee: feeOptions, from: AztecAddress.ZERO });
+    // NO_FROM: the account contract deploys itself (no existing account mediates the tx);
+    // 4.2.0 replaced the AztecAddress.ZERO convention with this explicit sentinel
+    const result = await deployMethod.send({ fee: feeOptions, from: NO_FROM, wait: { timeout: 120 } });
     logger.info(`Account contract deployed at ${result.contract.address.toString()}`);
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
-    if (msg.includes('Existing nullifier')) {
+    if (msg.includes(TX_ERROR_EXISTING_NULLIFIER)) {
       logger.info('Account contract already deployed (nullifier exists)');
     } else {
       throw error;
@@ -254,17 +251,9 @@ async function deployContract(
   if (isDeployed) {
     logger.info(`${label} already deployed at: ${instance.address.toString()}`);
 
-    try {
-      await deployer.registerContract(instance, artifact);
-      logger.debug(`${label} registered with PXE`);
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes('already')) {
-        logger.debug(`${label} already registered with PXE`);
-      } else {
-        throw error;
-      }
-    }
+    // registerContract is an idempotent upsert; no need to special-case re-registration
+    await deployer.registerContract(instance, artifact);
+    logger.debug(`${label} registered with PXE`);
 
     return { address: instance.address, status: 'existing' };
   }
@@ -276,10 +265,16 @@ async function deployContract(
     universalDeploy: true,
   });
 
+  // Skip re-publishing the contract class when it is already registered on-chain (e.g. the
+  // second and third Token deploys share the first one's class) — smaller, cheaper txs.
+  const contractClass = await getContractClassFromArtifact(artifact);
+  const classMetadata = await deployer.getContractClassMetadata(contractClass.id);
+
   try {
     await deployMethod.send({
       ...options,
-      wait: { waitForStatus: TxStatus.PROPOSED },
+      skipClassPublication: classMetadata.isContractClassPubliclyRegistered,
+      wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
     });
   } catch (error: unknown) {
     const msg =
@@ -288,7 +283,7 @@ async function deployContract(
         : error instanceof Object && 'cause' in error && error.cause instanceof Error
           ? error.cause.message
           : String(error);
-    if (msg.includes('Existing nullifier')) {
+    if (msg.includes(TX_ERROR_EXISTING_NULLIFIER)) {
       logger.info(`${label} already deployed (existing nullifier) at: ${instance.address.toString()}`);
       return { address: instance.address, status: 'existing' };
     }
@@ -456,17 +451,9 @@ export async function deployContracts(options: CLIOptions, config: DeploymentCon
 
       logger.info(`Dripper found at: ${dripperAddress.toString()}`);
 
-      try {
-        await wallet.registerContract(dripperInstance, DripperContractArtifact);
-        logger.debug('Dripper registered with PXE');
-      } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        if (msg.includes('already')) {
-          logger.debug('Dripper already registered');
-        } else {
-          throw error;
-        }
-      }
+      // registerContract is an idempotent upsert; no need to special-case re-registration
+      await wallet.registerContract(dripperInstance, DripperContractArtifact);
+      logger.debug('Dripper registered with PXE');
 
       const dripperContract = await DripperContract.at(dripperAddress, wallet);
       dripper = { contract: dripperContract, status: 'existing' };
