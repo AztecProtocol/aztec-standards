@@ -9,9 +9,11 @@ use aztec::protocol::address::AztecAddress;
 use token_contract::test::utils::{check_total_supply, get_total_supply};
 use token_contract::Token;
 
-// NOTE: If salt setting in env deployment ever becomes supported, the vault address could be
-// precomputed and the authwit created before deployment. Until then these tests deploy first
-// (see setup_with_vault_initial_deposit) and create the authwit afterwards.
+// NOTE: env.deploy_opts + DeployOptions::with_salt (aztec-nr v5.1.0) makes salts settable, but the
+// high-level deploy path still hardcodes deployer = zero, which Vault rejects ("universal deploy
+// not supported"). Until a DeployOptions::with_deployer exists upstream, these tests deploy via the
+// raw txe_oracles::deploy (which takes a deployer) first and create the authwit afterwards
+// (see setup_with_vault_initial_deposit).
 
 #[test]
 unconstrained fn vault_with_initial_deposit_success() {

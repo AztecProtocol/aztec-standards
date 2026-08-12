@@ -382,8 +382,11 @@ describe('NFT', () => {
         call: await intent.action.getFunctionCall(),
       }); // Wrong signer (carl instead of alice)
 
-      // Transfer should fail with invalid authorization
-      await expect(transferCallInterface.send({ from: bob, authWitnesses: [witness] })).rejects.toThrow();
+      // Transfer should fail with invalid authorization (match the auth failure specifically,
+      // so an unrelated error can't make this test pass)
+      await expect(transferCallInterface.send({ from: bob, authWitnesses: [witness] })).rejects.toThrow(
+        /unauthorized|not authorized|authwit/i,
+      );
 
       // Alice still owns the NFT
       await assertOwnsPublicNFT(nft, tokenId, alice, true);
