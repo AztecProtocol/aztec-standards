@@ -17,6 +17,10 @@ Noir limits each package to a single contract, so the two hook variants live in 
 
 The function bodies in these packages are empty stubs: the artifacts define the ABI and are not meant to be deployed. **Never deploy the stubs as a real authorizer — an empty hook body approves everything.** To write an authorization contract, implement these exact signatures in your own contract and **revert to deny** the triggering token operation. The `selector` argument is the selector of the token function that invoked the hook, letting a policy distinguish e.g. burns from transfers.
 
+### Why a stub contract?
+
+This mirrors aztec-packages' own [`protocol_interface`](https://github.com/AztecProtocol/aztec-packages/tree/master/noir-projects/noir-contracts/contracts/protocol_interface) packages (FeeJuice, ContractInstanceRegistry), whose empty-bodied `#[aztec]` contracts exist purely to provide a generated Noir call interface. The `#[aztec]` macro derives the caller-side interface exclusively from function names, parameter types, and `#[external]` attributes — bodies are never read — so calls through a stub are byte-identical to calls through the real implementation. The alternative idiom (raw `FunctionSelector::from_signature` + `context.call_*_function`, as used by authwit) was considered and rejected: it leaves implementers with no compilable artifact to conform to, and forfeits compile-time type-checking at the token's call sites.
+
 ## Consuming the interface from Noir
 
 ```toml

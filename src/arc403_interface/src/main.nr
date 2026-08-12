@@ -2,10 +2,17 @@ use aztec::macros::aztec;
 
 /// ARC-403 authorization-hook interface (DRAFT).
 ///
-/// This package is the canonical interface that ARC-403 authorization contracts must
-/// conform to. The Token contract in this repository calls these entry points on its
-/// configured `auth_contract` before every hooked transfer or burn. The id-bearing
-/// variant used by MultiToken lives in the `arc403_multitoken_interface` sub-package.
+/// The sole purpose of this contract is to serve as a Noir interface: it is the canonical
+/// set of signatures that ARC-403 authorization contracts must conform to. The Token
+/// contract in this repository calls these entry points on its configured `auth_contract`
+/// before every hooked transfer or burn. The id-bearing variant used by MultiToken lives
+/// in the `arc403_multitoken_interface` sub-package.
+///
+/// This stub-contract-as-interface pattern follows aztec-packages' own
+/// `noir-contracts/contracts/protocol_interface` packages (FeeJuice,
+/// ContractInstanceRegistry), which use empty-bodied `#[aztec]` contracts for the same
+/// purpose. The generated call interface depends only on function names, parameter
+/// types, and the `#[external]` attributes — never on bodies.
 ///
 /// The ARC-403 specification is a draft under active discussion:
 /// https://forum.aztec.network/t/arc-403-authtoken/7887
