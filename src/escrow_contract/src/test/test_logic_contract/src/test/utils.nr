@@ -14,8 +14,9 @@ use escrow_contract::types::escrow_details_event::EscrowDetailsLogContent;
 // --- TXE private events (`txe_oracles::get_private_events` is crate-private; we duplicate its oracle only) ---
 //
 // CANONICAL VALUES: keep in lockstep with aztec-nr when bumping the `aztec` dependency (this crate's Nargo.toml tag).
-// Source: https://github.com/AztecProtocol/aztec-packages/blob/v4.2.0-aztecnr-rc.2/noir-projects/aztec-nr/aztec/src/test/helpers/txe_oracles.nr#L13-L14
-// (`MAX_PRIVATE_EVENTS_PER_TXE_QUERY` and `MAX_EVENT_SERIALIZATION_LENGTH` are module-private there, so not importable.)
+// Source: https://github.com/AztecProtocol/aztec-packages/blob/v5.1.0/noir-projects/aztec-nr/aztec/src/test/helpers/txe_oracles.nr#L42-L43
+// (`MAX_PRIVATE_EVENTS_PER_TXE_QUERY` and `MAX_EVENT_SERIALIZATION_LENGTH` are still module-private there, so not importable;
+// values re-verified unchanged at v5.1.0.)
 global MAX_PRIVATE_EVENTS_PER_TXE_QUERY: u32 = 5;
 global MAX_EVENT_SERIALIZATION_LENGTH: u32 = 10;
 

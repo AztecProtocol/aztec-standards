@@ -16,7 +16,7 @@ import {
   getContractInstanceFromInstantiationParams,
 } from '@aztec/aztec.js/contracts';
 import { AuthWitness, SetPublicAuthwitContractInteraction } from '@aztec/aztec.js/authorization';
-import { getPublicEvents } from '@aztec/aztec.js/events';
+import { getPublicEvents, type EventCursor } from '@aztec/aztec.js/events';
 import { getDefaultInitializer, getInitializer } from '@aztec/stdlib/abi';
 import {
   computeInitializationHash,
@@ -33,13 +33,15 @@ import { Barretenberg } from '@aztec/bb.js';
 /**
  * Subset of protected BaseWallet methods needed to prove a tx and extract private return values.
  * These are not part of the public Wallet interface, so we define a local type to avoid `as any`.
+ * Signatures must be kept in lockstep with `BaseWallet` (`@aztec/wallet-sdk/base-wallet`) on every
+ * version bump — they are internal and can change without a deprecation cycle.
  */
 interface WalletWithInternals {
-  completeFeeOptions(
-    from: AztecAddress,
-    feePayer: AztecAddress | undefined,
-    gasSettings: undefined,
-  ): Promise<FeeOptions>;
+  completeFeeOptions(config: {
+    from: AztecAddress;
+    feePayer?: AztecAddress;
+    forEstimation?: boolean;
+  }): Promise<FeeOptions>;
   createTxExecutionRequestFromPayloadAndFee(
     executionPayload: ExecutionPayload,
     from: AztecAddress,
@@ -428,7 +430,45 @@ export async function setPublicAuthWit(
   await validateAction.send();
 }
 
-// TODO: Replace wallet internals (privateExecutionResult) with simulate() + send() to get private return values via public API.
+/**
+ * NOTE: This intentionally uses wallet internals (proveTx + privateExecutionResult) to read the
+ * private return value (the commitment) of the SAME execution that gets submitted. Do NOT replace
+ * this with simulate()-then-send(): `initialize_transfer_commitment` derives its commitment from
+ * randomness drawn fresh on every private execution, so a simulated commitment would never match
+ * the partial note the sent tx actually creates. As of @aztec/* 5.1.0 no public wallet API exposes
+ * private return values (BaseWallet.sendTx discards privateExecutionResult) — re-check on bumps.
+ *
+ * Proves an `initialize_transfer_commitment` interaction, extracts the private return value
+ * (the partial-note commitment), submits the proven tx, and waits for it to land.
+ */
+async function proveExtractAndSendCommitment(
+  interaction: ContractFunctionInteraction,
+  wallet: Wallet,
+  caller: AztecAddress,
+): Promise<bigint> {
+  const executionPayload = await interaction.request();
+  const w = wallet as unknown as WalletWithInternals;
+  const feeOptions = await w.completeFeeOptions({ from: caller, feePayer: executionPayload.feePayer });
+  const txRequest = await w.createTxExecutionRequestFromPayloadAndFee(executionPayload, caller, feeOptions);
+  const provenTx = await w.pxe.proveTx(txRequest, { scopes: [caller], senderForTags: caller });
+
+  // The first nested result is the actual function call (the account contract is the entrypoint).
+  // Guard the shape: a future account-entrypoint change (e.g. multicall wrapping) could shift it.
+  const nestedResults = provenTx.privateExecutionResult.entrypoint.nestedExecutionResults;
+  if (nestedResults.length < 1 || nestedResults[0].returnValues.length < 1) {
+    throw new Error('Unexpected private execution shape: no nested result/return value to read the commitment from');
+  }
+  const commitment = nestedResults[0].returnValues[0].toBigInt();
+
+  // Submit the proven tx to the node
+  const tx = await provenTx.toTx();
+  const txHash = tx.getTxHash();
+  await node.sendTx(tx);
+  await waitForTx(node, txHash);
+
+  return commitment;
+}
+
 /**
  * Initializes a transfer commitment
  * @param token - The token contract instance.
@@ -443,28 +483,8 @@ export async function initializeTransferCommitment(
   to: AccountManager,
   completer: AztecAddress,
 ): Promise<bigint> {
-  // Use wallet internals to prove the tx and extract the private return value (the commitment)
   const interaction = token.methods.initialize_transfer_commitment(to.address, completer);
-  const executionPayload = await interaction.request();
-  const w = token.wallet as unknown as WalletWithInternals;
-  const feeOptions = await w.completeFeeOptions(caller, executionPayload.feePayer, undefined);
-  const txRequest = await w.createTxExecutionRequestFromPayloadAndFee(executionPayload, caller, feeOptions);
-  const provenTx = await w.pxe.proveTx(txRequest, { scopes: [caller], senderForTags: caller });
-
-  // Extract the commitment from the nested private execution results
-  const entrypoint = provenTx.privateExecutionResult.entrypoint;
-  const nestedResults = entrypoint.nestedExecutionResults;
-  // The first nested result is the actual function call (account contract is entrypoint)
-  const returnValues = nestedResults[0].returnValues;
-  const commitment = returnValues[0].toBigInt();
-
-  // Submit the proven tx to the node
-  const tx = await provenTx.toTx();
-  const txHash = tx.getTxHash();
-  await node.sendTx(tx);
-  await waitForTx(node, txHash);
-
-  return commitment;
+  return proveExtractAndSendCommitment(interaction, token.wallet, caller);
 }
 
 /**
@@ -481,25 +501,8 @@ export async function initializeTransferCommitmentNFT(
   to: AccountManager,
   completer: AztecAddress,
 ): Promise<bigint> {
-  // Use wallet internals to prove the tx and extract the private return value (the commitment)
   const interaction = nft.methods.initialize_transfer_commitment(to.address, completer);
-  const executionPayload = await interaction.request();
-  const w = nft.wallet as unknown as WalletWithInternals;
-  const feeOptions = await w.completeFeeOptions(caller, executionPayload.feePayer, undefined);
-  const txRequest = await w.createTxExecutionRequestFromPayloadAndFee(executionPayload, caller, feeOptions);
-  const provenTx = await w.pxe.proveTx(txRequest, { scopes: [caller], senderForTags: caller });
-
-  const entrypoint = provenTx.privateExecutionResult.entrypoint;
-  const nestedResults = entrypoint.nestedExecutionResults;
-  const returnValues = nestedResults[0].returnValues;
-  const commitment = returnValues[0].toBigInt();
-
-  const tx = await provenTx.toTx();
-  const txHash = tx.getTxHash();
-  await node.sendTx(tx);
-  await waitForTx(node, txHash);
-
-  return commitment;
+  return proveExtractAndSendCommitment(interaction, nft.wallet, caller);
 }
 
 // --- Logic Contract Utils ---
@@ -650,6 +653,26 @@ export type TransferEvent = {
 };
 
 /**
+ * Fetches ALL public events of a given type for a (contract, tx) pair, following the cursor.
+ * `getPublicEvents` returns at most one page (MAX_LOGS_PER_TAG) per call; ignoring `nextCursor`
+ * would silently truncate event-heavy txs, so every event helper below goes through this.
+ */
+async function getAllPublicEvents<T>(
+  eventMetadata: Parameters<typeof getPublicEvents<T>>[1],
+  txHash: TxHash,
+  contractAddress: AztecAddress,
+): Promise<T[]> {
+  const all: T[] = [];
+  let afterEvent: EventCursor | undefined;
+  do {
+    const page = await getPublicEvents<T>(node, eventMetadata, { contractAddress, txHash, afterEvent });
+    all.push(...page.events.map((e) => e.event));
+    afterEvent = page.nextCursor;
+  } while (afterEvent);
+  return all;
+}
+
+/**
  * Queries the node for public Transfer events emitted in a transaction by a specific contract.
  *
  * @param txHash - The transaction hash to query events for.
@@ -657,11 +680,7 @@ export type TransferEvent = {
  * @returns An array of decoded TransferEvent objects.
  */
 export async function getTransferEvents(txHash: TxHash, contractAddress: AztecAddress): Promise<TransferEvent[]> {
-  const { events } = await getPublicEvents<TransferEvent>(node, TokenContract.events.Transfer, {
-    contractAddress,
-    txHash,
-  });
-  return events.map((e) => e.event);
+  return getAllPublicEvents<TransferEvent>(TokenContract.events.Transfer, txHash, contractAddress);
 }
 
 /**
@@ -709,11 +728,7 @@ export type NFTTransferEvent = {
  * @returns An array of decoded NFTTransferEvent objects.
  */
 export async function getNFTTransferEvents(txHash: TxHash, contractAddress: AztecAddress): Promise<NFTTransferEvent[]> {
-  const { events } = await getPublicEvents<NFTTransferEvent>(node, NFTContract.events.Transfer, {
-    contractAddress,
-    txHash,
-  });
-  return events.map((e) => e.event);
+  return getAllPublicEvents<NFTTransferEvent>(NFTContract.events.Transfer, txHash, contractAddress);
 }
 
 /**
@@ -814,13 +829,11 @@ export async function deployMultiTokenWithMinter(
   return contract as MultiTokenContract;
 }
 
-// TODO: Replace wallet internals (privateExecutionResult) with simulate() + send() to get private return values via public API.
 /**
  * Initializes a MultiToken transfer commitment (partial note) and returns its commitment Field.
- * Mirrors `initializeTransferCommitment` (the ONLY sanctioned wallet-internals escape hatch) — the
- * MultiToken `initialize_transfer_commitment(to, completer)` is id-AGNOSTIC (the completer binds the id
- * at completion), so the signature is identical to the Token/NFT variant. Reaches into
- * `WalletWithInternals` to extract the partial-note commitment from `provenTx.privateExecutionResult`.
+ * Mirrors `initializeTransferCommitment` — the MultiToken `initialize_transfer_commitment(to, completer)`
+ * is id-AGNOSTIC (the completer binds the id at completion), so the signature is identical to the
+ * Token/NFT variant. See `proveExtractAndSendCommitment` for why wallet internals are required here.
  * @param token - The MultiToken contract instance.
  * @param caller - The account that sends (and settles) the initialize tx.
  * @param to - The address of the note recipient.
@@ -834,23 +847,7 @@ export async function initializeMultiTokenTransferCommitment(
   completer: AztecAddress,
 ): Promise<bigint> {
   const interaction = token.methods.initialize_transfer_commitment(to, completer);
-  const executionPayload = await interaction.request();
-  const w = token.wallet as unknown as WalletWithInternals;
-  const feeOptions = await w.completeFeeOptions(caller, executionPayload.feePayer, undefined);
-  const txRequest = await w.createTxExecutionRequestFromPayloadAndFee(executionPayload, caller, feeOptions);
-  const provenTx = await w.pxe.proveTx(txRequest, { scopes: [caller], senderForTags: caller });
-
-  const entrypoint = provenTx.privateExecutionResult.entrypoint;
-  const nestedResults = entrypoint.nestedExecutionResults;
-  const returnValues = nestedResults[0].returnValues;
-  const commitment = returnValues[0].toBigInt();
-
-  const tx = await provenTx.toTx();
-  const txHash = tx.getTxHash();
-  await node.sendTx(tx);
-  await waitForTx(node, txHash);
-
-  return commitment;
+  return proveExtractAndSendCommitment(interaction, token.wallet, caller);
 }
 
 // --- MultiToken Transfer Event Utils ---
@@ -876,11 +873,7 @@ export async function getMultiTokenTransferEvents(
   txHash: TxHash,
   contractAddress: AztecAddress,
 ): Promise<MultiTokenTransferEvent[]> {
-  const { events } = await getPublicEvents<MultiTokenTransferEvent>(node, MultiTokenContract.events.TransferSingle, {
-    contractAddress,
-    txHash,
-  });
-  return events.map((e) => e.event);
+  return getAllPublicEvents<MultiTokenTransferEvent>(MultiTokenContract.events.TransferSingle, txHash, contractAddress);
 }
 
 /**
