@@ -326,3 +326,55 @@ unconstrained fn deposit_private_to_private_on_behalf_of_other_success() {
     // Check vault has assets
     utils::check_public_balance(env, asset_address, vault_address, deposit_amount);
 }
+
+#[test]
+unconstrained fn deposit_private_to_private_repeated_identical_self_deposits_distinct_nonces() {
+    // Regression guard for the vault's dual-use `nonce`: it is forwarded as the inner asset
+    // transfer's authwit nonce, so a SELF-caller must be able to pass a nonzero nonce — distinct
+    // nonces are what let two otherwise-identical private asset authwits both be consumed.
+    // This is why the vault does not use #[authorize_once("from", "nonce")], which asserts
+    // nonce == 0 whenever from == msg_sender and would revert both deposits below.
+    let (mut env, vault_address, owner, recipient, asset_address, shares_address) =
+        utils::setup_with_vault(true);
+
+    let deposit_amount: u128 = mint_amount;
+
+    // First self-deposit: identical asset authwit shape, nonce 1
+    env.call_private(owner, Token::at(asset_address).mint_to_private(owner, deposit_amount));
+    let transfer_1 =
+        Token::at(asset_address).transfer_private_to_public(owner, vault_address, deposit_amount, 1);
+    authwit_cheatcodes::add_private_authwit_from_call(env, owner, vault_address, transfer_1);
+    let shares_1 = deposit_amount;
+    env.call_private(
+        owner,
+        Vault::at(vault_address).deposit_private_to_private(
+            owner,
+            recipient,
+            deposit_amount,
+            shares_1,
+            1,
+        ),
+    );
+
+    // Second self-deposit: same from/to/amount (identical authwit preimage except the nonce)
+    env.call_private(owner, Token::at(asset_address).mint_to_private(owner, deposit_amount));
+    let transfer_2 =
+        Token::at(asset_address).transfer_private_to_public(owner, vault_address, deposit_amount, 2);
+    authwit_cheatcodes::add_private_authwit_from_call(env, owner, vault_address, transfer_2);
+    // Request slightly fewer shares than the 1:1 first deposit: the +1/offset conversion rounds down
+    let shares_2 = deposit_amount / 2;
+    env.call_private(
+        owner,
+        Vault::at(vault_address).deposit_private_to_private(
+            owner,
+            recipient,
+            deposit_amount,
+            shares_2,
+            2,
+        ),
+    );
+
+    // Both deposits landed: recipient holds both share issuances, vault holds both asset amounts
+    utils::check_private_balance(env, shares_address, recipient, shares_1 + shares_2);
+    utils::check_public_balance(env, asset_address, vault_address, deposit_amount + deposit_amount);
+}

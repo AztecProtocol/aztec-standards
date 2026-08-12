@@ -1478,6 +1478,17 @@ pub contract Vault {
      * ======================================================== */
 
     /// @notice Validates that the caller possesses authwit from the `from` address or the caller is the `from` address
+    /// @dev Deliberately NOT `#[authorize_once("from", "nonce")]`: that macro asserts `nonce == 0`
+    ///      whenever `from == msg_sender`, which is sound for the token contracts (their nonce exists
+    ///      only for the token-call authwit) but wrong here. The vault's `nonce` is dual-purpose — it
+    ///      is forwarded as the authwit nonce of the inner token operations the vault performs on the
+    ///      user's behalf (asset `transfer_public_to_public`, shares `burn_private`/`burn_public`).
+    ///      A self-caller needs no VAULT authwit but still grants token authwits to the vault, and
+    ///      distinct nonces are what let otherwise-identical operations repeat: private authwit
+    ///      nullifiers commit to the inner call hash, which includes the nonce, so an identical
+    ///      private token call at nonce 0 can never be consumed twice (public authwits live in
+    ///      registry state and could be re-authorized, but the private-path regression is decisive).
+    ///      Forcing `nonce == 0` on self-calls would break e.g. two identical private self-deposits.
     #[contract_library_method]
     fn _validate_from_private<let N: u32>(context: &mut PrivateContext, from: AztecAddress) {
         if (!from.eq(context.maybe_msg_sender().unwrap())) {
@@ -1486,6 +1497,7 @@ pub contract Vault {
     }
 
     /// @notice Validates that the caller possesses authwit from the `from` address or the caller is the `from` address
+    /// @dev See `_validate_from_private` for why this is not `#[authorize_once]`
     #[internal("public")]
     fn _validate_from_public(from: AztecAddress) {
         if (!from.eq(self.msg_sender())) {
