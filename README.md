@@ -81,7 +81,7 @@ The `Vault` contract is a standalone yield-bearing vault that holds an underlyin
 We published the [AIP-4626: Tokenized Vault Standard](https://forum.aztec.network/t/request-for-comments-aip-4626-tokenized-vault/8079) to the forum. Feel free to review and discuss the specification there.
 
 > [!WARNING]
-> The Vault is **not production-ready**, even by this repository's unaudited standards: it has a [known overflow issue in the asset↔share conversion logic](src/vault_contract/README.md) and known privacy limitations documented in its README. No fix is currently scheduled.
+> The Vault is **not production-ready**, even by this repository's unaudited standards. It is exposed to [reentrancy when the underlying asset token has an ARC-403 authorization hook configured](src/vault_contract/README.md) (its ordering-based protection does not hold, because the hook runs *during* a transfer, before balances move), and it has a known overflow issue in the asset↔share conversion logic plus known privacy limitations. No fix is currently scheduled — see its README before wrapping any hooked token.
 
 📖 **[View detailed Vault documentation](src/vault_contract/README.md)**
 
