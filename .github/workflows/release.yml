@@ -1,10 +1,13 @@
 name: Release
 
-# Tag-driven: pushing a `v*` tag (e.g. v5.0.0) publishes that version.
+# Tag-driven releases publish the tagged version. Manual runs publish a canary
+# from the selected commit. Keeping both paths in one workflow is required
+# because npm supports only one trusted publisher per package.
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,18 +15,18 @@ concurrency:
 
 jobs:
   # ══════════════════════════════════════════════════════════════════════════════
-  # TAGGED RELEASE JOB
+  # PUBLISH JOB
   # ══════════════════════════════════════════════════════════════════════════════
   release:
-    name: Release
-    # Prerelease tags are canary releases and must not consume Production credentials or approvals.
+    name: Publish
+    # Manual canaries and prerelease tags must not consume Production approvals.
     # Stable tags use the reviewer-gated Production environment.
-    environment: ${{ contains(github.ref_name, '-') && 'Development' || 'Production' }}
+    environment: ${{ github.event_name == 'workflow_dispatch' && 'Development' || (contains(github.ref_name, '-') && 'Development' || 'Production') }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read # checkout (the tag already exists)
-      id-token: write # OIDC token for npm provenance
+      id-token: write # OIDC token for npm Trusted Publishing
 
     env:
       PROJECT_NAME: '@aztec-foundation/aztec-standards'
@@ -43,26 +46,33 @@ jobs:
           start-pxe: 'false'
           run-codegen: 'true'
 
-      # Version comes from the tag (v5.0.0 -> 5.0.0). Validate it matches package.json,
-      # and derive the npm dist-tag: `latest` for a final release; otherwise the
-      # prerelease identifier (rc / beta / nightly) so consumers can `npm i pkg@rc`.
+      # Manual runs use an immutable commit-derived canary version. Tag releases
+      # validate that v5.0.0 matches package.json and derive the npm dist-tag:
+      # `latest` for a final release, or the prerelease identifier (rc / beta /
+      # nightly) so consumers can `npm i pkg@rc`.
       - name: Resolve release metadata
         id: meta
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          PKG_VERSION=$(node -p "require('./package.json').version")
-          echo "Tag version: $VERSION"
-          echo "package.json version: $PKG_VERSION"
-          if [ "$VERSION" != "$PKG_VERSION" ]; then
-            echo "::error::Tag ${GITHUB_REF_NAME} (version $VERSION) does not match package.json version ($PKG_VERSION)."
-            exit 1
-          fi
-
-          if [[ "$VERSION" == *-* ]]; then
-            PRERELEASE="${VERSION#*-}"     # e.g. "rc.2"
-            DIST_TAG="${PRERELEASE%%.*}"   # e.g. "rc"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="0.0.0-${GITHUB_SHA::8}"
+            DIST_TAG="canary"
+            yarn version --new-version "$VERSION" --no-git-tag-version
           else
-            DIST_TAG="latest"
+            VERSION="${GITHUB_REF_NAME#v}"
+            PKG_VERSION=$(node -p "require('./package.json').version")
+            echo "Tag version: $VERSION"
+            echo "package.json version: $PKG_VERSION"
+            if [ "$VERSION" != "$PKG_VERSION" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} (version $VERSION) does not match package.json version ($PKG_VERSION)."
+              exit 1
+            fi
+
+            if [[ "$VERSION" == *-* ]]; then
+              PRERELEASE="${VERSION#*-}"     # e.g. "rc.2"
+              DIST_TAG="${PRERELEASE%%.*}"   # e.g. "rc"
+            else
+              DIST_TAG="latest"
+            fi
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -75,25 +85,31 @@ jobs:
       - name: Setup Node.js for NPM publish
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22'
+          # npm Trusted Publishing requires Node >=22.14.0 and npm >=11.5.1.
+          node-version: '22.14.0'
           registry-url: 'https://registry.npmjs.org'
 
-      # Idempotent: npm versions are immutable, so a re-run of the same tag must not
-      # hard-fail. If the version is already published, just ensure the dist-tag points
-      # at it; otherwise publish (with provenance).
-      - name: Publish to NPM
+      - name: Install OIDC-capable npm
+        run: npm install --global npm@11.5.1
+
+      # npm versions are immutable. OIDC supports publish but not dist-tag mutation,
+      # so reruns verify the existing dist-tag rather than trying to repair it.
+      - name: Publish to NPM with OIDC
         run: |
           cd "export/${PROJECT_NAME}"
           VERSION="${{ steps.meta.outputs.version }}"
           DIST_TAG="${{ steps.meta.outputs.dist_tag }}"
           if npm view "${PROJECT_NAME}@${VERSION}" version >/dev/null 2>&1; then
-            echo "::notice::${PROJECT_NAME}@${VERSION} already published — ensuring dist-tag '${DIST_TAG}' and skipping publish."
-            npm dist-tag add "${PROJECT_NAME}@${VERSION}" "${DIST_TAG}"
+            TAGGED_VERSION=$(npm view "${PROJECT_NAME}@${DIST_TAG}" version 2>/dev/null || true)
+            if [ "$TAGGED_VERSION" != "$VERSION" ]; then
+              echo "::error::${PROJECT_NAME}@${VERSION} is already published, but dist-tag '${DIST_TAG}' points to '${TAGGED_VERSION:-nothing}'. OIDC cannot mutate dist-tags; repair it manually with an authorized npm account."
+              exit 1
+            fi
+            echo "::notice::${PROJECT_NAME}@${VERSION} already published and dist-tag '${DIST_TAG}' is correct — skipping publish."
           else
-            npm publish --access public --provenance --tag "${DIST_TAG}"
+            # Trusted Publishing generates provenance automatically for public packages.
+            npm publish --access public --tag "${DIST_TAG}"
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # Post-publish smoke test: install the just-published package from the registry (clean dir)
       # and confirm it resolves to the expected version. Catches "published but unusable"
@@ -120,5 +136,3 @@ jobs:
           else
             echo "::warning::${PROJECT_NAME}@${VERSION} published successfully but did not resolve from the registry within the wait window (propagation lag — common on a first publish). Verify manually: npm view ${PROJECT_NAME}@${VERSION} --prefer-online"
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

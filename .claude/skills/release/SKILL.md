@@ -18,9 +18,12 @@ Assumes the version bump is already merged to `main` (see the `bump-aztec-versio
 
 ## Preconditions (state them; don't assume)
 
-- Fork workflows enabled; `NPM_TOKEN` with publish+**create** rights for the package scope in both
-  `Development` (prereleases/canaries) and `Production` (stable releases); workflows on an available
-  runner (standard `ubuntu-latest`); `v*` tag-push rights.
+- Fork workflows enabled; npm Trusted Publishing configured for the package with organization
+  `AztecProtocol`, repository `aztec-standards`, workflow `release.yml`, no environment restriction,
+  and `npm publish` allowed; workflows on an available runner (standard `ubuntu-latest`); `v*`
+  tag-push rights. The workflow routes prereleases/canaries through `Development` and stable releases
+  through `Production`, but npm allows only one trusted publisher and one optional environment per
+  package, so the publisher must not be restricted to either environment.
 
 ## Step 1 — pick mode + version (ALWAYS ASK — never infer)
 
@@ -122,8 +125,12 @@ _smoke_ step alone (propagation lag) is not a failed release — confirm the pub
   released tag SHA (with a `# vX` comment), not a transient `main` HEAD — a pre-re-scope commit can still
   `require('@defi-wonderland/…')`.
 - **npm is immutable.** Always rehearse with an `rc` before the final tag. `release.yml` publishes
-  idempotently (re-running a tag re-points the dist-tag instead of erroring) and smoke-tests, so a failed
-  run is safe to re-trigger.
-- **Provenance.** `release.yml` publishes with `--provenance` (needs `id-token: write` + `repository.url`
-  matching the running repo). The `rc` run is the first to exercise it; a Sigstore transparency-log line
-  in the publish output confirms it worked.
+  idempotently when the expected dist-tag is already correct and smoke-tests the result. A rerun
+  with a mismatched dist-tag fails safely and requires a maintainer to repair the tag manually.
+- **OIDC + provenance.** `release.yml` uses npm Trusted Publishing (needs `id-token: write`, npm CLI
+  11.5.1+, Node 22.14.0+, and `repository.url` matching the running repo). npm generates provenance
+  automatically. The `rc` run is the first to exercise it; a Sigstore transparency-log line in the
+  publish output confirms it worked.
+- **Reruns cannot repair dist-tags.** npm OIDC authenticates `npm publish`, not `npm dist-tag add`. A
+  rerun skips an already-published version only when its expected dist-tag is already correct; otherwise
+  the workflow fails with instructions to repair the tag using an authorized npm account.

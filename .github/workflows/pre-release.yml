@@ -9,6 +9,5 @@ jobs:
     with:
       package-dir: export/@aztec-foundation/aztec-standards
       runner: ubuntu-latest
-    secrets: inherit
     permissions:
       contents: write
