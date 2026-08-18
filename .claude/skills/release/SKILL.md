@@ -10,20 +10,24 @@ description: >-
 
 # Release (rc prerelease or production)
 
-One flow for both. The tag-driven `release.yml` (`on: push tags v*`) derives both the npm dist-tag and
-GitHub environment from the version: a prerelease such as `-rc.N` uses dist-tag `rc` and the
-`Development` environment; a stable version uses `latest` and the reviewer-gated `Production`
-environment. The `rc` is a **rehearsal** for the immutable production publish — always do it first.
-Assumes the version bump is already merged to `main` (see the `bump-aztec-version` skill).
+One flow for both. The tag-driven `release.yml` (`on: push tags v*`) derives the npm dist-tag from the
+version — a prerelease such as `-rc.N` publishes under `rc`, a stable version under `latest` — and runs
+**every** publish in the reviewer-gated `Production` environment. The `rc` is a **rehearsal** for the
+immutable production publish — always do it first, and because it uses the same environment and
+credential path, a green `rc` genuinely predicts the stable run. Assumes the version bump is already
+merged to `main` (see the `bump-aztec-version` skill).
 
 ## Preconditions (state them; don't assume)
 
 - Fork workflows enabled; npm Trusted Publishing configured for the package with organization
-  `AztecProtocol`, repository `aztec-standards`, workflow `release.yml`, no environment restriction,
+  `AztecProtocol`, repository `aztec-standards`, workflow `release.yml`, environment `Production`,
   and `npm publish` allowed; workflows on an available runner (standard `ubuntu-latest`); `v*`
-  tag-push rights. The workflow routes prereleases/canaries through `Development` and stable releases
-  through `Production`, but npm allows only one trusted publisher and one optional environment per
-  package, so the publisher must not be restricted to either environment.
+  tag-push rights; a `Production` reviewer available to approve the deployment.
+- The environment pin is load-bearing on both sides. npm allows one trusted publisher per package with
+  one optional environment claim, and GitHub only stamps that claim when the job declares an
+  environment — so `release.yml` must keep `environment: Production` on every path. A job running in
+  any other environment (or none) mints a token npm rejects with `E404` on `PUT`, which reads as
+  "missing" but means "unauthorized".
 
 ## Step 1 — pick mode + version (ALWAYS ASK — never infer)
 
@@ -57,13 +61,15 @@ assertion that fails the run on a mismatch):
 cd "$(git rev-parse --show-toplevel)"
 TARGET="X.Y.Z-rc.N"   # the version you're releasing: X.Y.Z (production) or X.Y.Z-rc.N (rc)
 case "$TARGET" in
-  *-*) DIST="${TARGET#*-}"; DIST="${DIST%%.*}"; ENVIRONMENT="Development";;
-  *) DIST="latest"; ENVIRONMENT="Production";;
+  *-*) DIST="${TARGET#*-}"; DIST="${DIST%%.*}";;
+  *) DIST="latest";;
 esac   # mirrors release.yml
+ENVIRONMENT="Production"   # every tag, rc included
 echo "releasing v$TARGET → dist-tag '$DIST' via '$ENVIRONMENT'"
 [ "$(node -p "require('./package.json').version")" = "$TARGET" ] || { echo "ABORT: root package.json != $TARGET (bump didn't land — wrong dir / edited export/?)"; exit 1; }
 git diff --quiet HEAD -- package.json || { echo "ABORT: bump uncommitted — the tag must point at the committed bump"; exit 1; }
 grep -q "runs-on: ubuntu-latest$" .github/workflows/release.yml || echo "WARN: release.yml runner may be wrong (rebase onto main?)"
+grep -q "^    environment: Production$" .github/workflows/release.yml || { echo "ABORT: release.yml does not pin environment: Production — the npm trusted publisher will reject the OIDC token"; exit 1; }
 ```
 
 ## Step 4 — tag & push
@@ -78,9 +84,11 @@ git tag -d "v$TARGET" 2>/dev/null; git push origin ":refs/tags/v$TARGET" 2>/dev/
 git tag "v$TARGET" && git push origin "v$TARGET"   # fires release.yml (tag-triggered; uses the file at this commit)
 ```
 
-Before allowing the run to publish, verify its environment: prerelease tags must show `Development`;
-stable tags must show `Production`. Stop immediately if an rc/beta/canary tag requests `Production`.
-Approve the stable `Production` run if reviewers are set; prereleases should not need that approval.
+Every tag — rc included — parks on the `Production` environment waiting for a reviewer. Verify the run
+shows `Production` before it publishes; anything else means the workflow drifted and the OIDC token will
+be rejected. **The approval is the maintainer's to give, not yours**: report that the run is waiting and
+let the user approve it. Do not approve the deployment on their behalf, even with working `gh`
+credentials and even for an rc — that click is the human gate this design buys.
 
 ## Step 5 — verify, THEN report
 
@@ -117,10 +125,13 @@ _smoke_ step alone (propagation lag) is not a failed release — confirm the pub
 - **Runners + fork state.** A GitHub fork has workflows disabled by default (enable in the Actions tab).
   Target `ubuntu-latest`; don't assume custom/larger-runner labels (e.g. `ubuntu-latest-m`) exist — jobs
   stuck `queued` are the symptom.
-- **Environment separation.** Any version containing a prerelease suffix (`-rc.N`, `-beta.N`, etc.) is
-  a canary and must use `Development`; only a stable `X.Y.Z` tag may use `Production`. Check the selected
-  environment on the Actions deployment before publish. A prerelease waiting for Production approval is
-  a routing bug — do not approve it.
+- **One environment, pinned on both sides.** Every tag publishes through `Production`; the npm trusted
+  publisher pins the same environment. Changing one without the other breaks publishing: loosen npm and
+  you drop the gate, loosen `release.yml` and npm rejects the token. A prerelease waiting for Production
+  approval is now correct, not a routing bug. (History: prereleases used to route through `Development`,
+  so the rc rehearsed a credential path the stable release never took — `v5.1.0-rc.1` went green on
+  2026-07-23 and `v5.1.0` then failed to publish on 2026-08-04. Same environment now means a green rc
+  actually predicts the release.)
 - **Pin CI to real tags.** Reusable-workflow refs (aztec-ci-actions / aztec-benchmark) should be pinned to a
   released tag SHA (with a `# vX` comment), not a transient `main` HEAD — a pre-re-scope commit can still
   `require('@defi-wonderland/…')`.
@@ -128,9 +139,16 @@ _smoke_ step alone (propagation lag) is not a failed release — confirm the pub
   idempotently when the expected dist-tag is already correct and smoke-tests the result. A rerun
   with a mismatched dist-tag fails safely and requires a maintainer to repair the tag manually.
 - **OIDC + provenance.** `release.yml` uses npm Trusted Publishing (needs `id-token: write`, npm CLI
-  11.5.1+, Node 22.14.0+, and `repository.url` matching the running repo). npm generates provenance
-  automatically. The `rc` run is the first to exercise it; a Sigstore transparency-log line in the
-  publish output confirms it worked.
+  11.5.1+, Node 22.14.0+, `repository.url` matching the running repo, and the job's `environment` claim
+  matching the trusted publisher). npm generates provenance automatically; a Sigstore transparency-log
+  line in the publish output confirms it worked.
+- **`E404` on `PUT` means unauthorized, not missing.** npm answers an unauthenticated or unrecognised
+  publish with `404 Not Found - PUT …/@aztec-foundation%2faztec-standards`. Do not read it as a registry
+  or version problem. Check, in order: is a trusted publisher configured for the package at all; does its
+  environment match the job's; did `setup-node` leave `NODE_AUTH_TOKEN` as the literal
+  `XXXXX-XXXXX-XXXXX-XXXXX` placeholder with no OIDC exchange line in the log (the tell that npm fell
+  back to anonymous). Nothing is published when this fires, so the tag is safe to reuse after the fix —
+  re-run the failed job rather than churning the tag.
 - **Reruns cannot repair dist-tags.** npm OIDC authenticates `npm publish`, not `npm dist-tag add`. A
   rerun skips an already-published version only when its expected dist-tag is already correct; otherwise
   the workflow fails with instructions to repair the tag using an authorized npm account.
