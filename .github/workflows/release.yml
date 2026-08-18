@@ -1,13 +1,16 @@
 name: Release
 
-# Tag-driven releases publish the tagged version. Manual runs publish a canary
-# from the selected commit. Keeping both paths in one workflow is required
-# because npm supports only one trusted publisher per package.
+# Tag-driven releases publish the tagged version. Every publish — prerelease and
+# stable alike — runs in the reviewer-gated `Production` environment. npm supports
+# only one trusted publisher per package with one optional environment claim, so
+# pinning that publisher to `Production` requires every publishing job to run there.
+# It also makes the `rc` a faithful rehearsal: it exercises the same environment and
+# credential path the stable release will use, instead of a parallel one that can
+# drift out from under it.
 on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,9 +22,9 @@ jobs:
   # ══════════════════════════════════════════════════════════════════════════════
   release:
     name: Publish
-    # Manual canaries and prerelease tags must not consume Production approvals.
-    # Stable tags use the reviewer-gated Production environment.
-    environment: ${{ github.event_name == 'workflow_dispatch' && 'Development' || (contains(github.ref_name, '-') && 'Development' || 'Production') }}
+    # Single environment for every tag — see the note at the top of this file.
+    # Prereleases pay one approval click; that is the cost of the npm-side pin.
+    environment: Production
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -46,33 +49,26 @@ jobs:
           start-pxe: 'false'
           run-codegen: 'true'
 
-      # Manual runs use an immutable commit-derived canary version. Tag releases
-      # validate that v5.0.0 matches package.json and derive the npm dist-tag:
-      # `latest` for a final release, or the prerelease identifier (rc / beta /
-      # nightly) so consumers can `npm i pkg@rc`.
+      # Validate that the tag (v5.0.0) matches package.json and derive the npm
+      # dist-tag: `latest` for a final release, or the prerelease identifier
+      # (rc / beta / nightly) so consumers can `npm i pkg@rc`.
       - name: Resolve release metadata
         id: meta
         run: |
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            VERSION="0.0.0-${GITHUB_SHA::8}"
-            DIST_TAG="canary"
-            yarn version --new-version "$VERSION" --no-git-tag-version
-          else
-            VERSION="${GITHUB_REF_NAME#v}"
-            PKG_VERSION=$(node -p "require('./package.json').version")
-            echo "Tag version: $VERSION"
-            echo "package.json version: $PKG_VERSION"
-            if [ "$VERSION" != "$PKG_VERSION" ]; then
-              echo "::error::Tag ${GITHUB_REF_NAME} (version $VERSION) does not match package.json version ($PKG_VERSION)."
-              exit 1
-            fi
+          VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "Tag version: $VERSION"
+          echo "package.json version: $PKG_VERSION"
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} (version $VERSION) does not match package.json version ($PKG_VERSION)."
+            exit 1
+          fi
 
-            if [[ "$VERSION" == *-* ]]; then
-              PRERELEASE="${VERSION#*-}"     # e.g. "rc.2"
-              DIST_TAG="${PRERELEASE%%.*}"   # e.g. "rc"
-            else
-              DIST_TAG="latest"
-            fi
+          if [[ "$VERSION" == *-* ]]; then
+            PRERELEASE="${VERSION#*-}"     # e.g. "rc.2"
+            DIST_TAG="${PRERELEASE%%.*}"   # e.g. "rc"
+          else
+            DIST_TAG="latest"
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
