@@ -20,8 +20,7 @@
     "lint:prettier": "prettier '**/*.{js,ts}' --write",
     "format:check": "prettier --check '**/*.{js,ts}'",
     "bench": "NODE_NO_WARNINGS=1 aztec-benchmark --suffix _base",
-    "ccc": "yarn clean && yarn compile && yarn codegen",
-    "deploy": "NODE_NO_WARNINGS=1 tsx scripts/deploy.ts"
+    "ccc": "yarn clean && yarn compile && yarn codegen"
   },
   "lint-staged": {
     "*.ts": "prettier --write -u"
@@ -30,20 +29,15 @@
     "@aztec/aztec.js": "5.2.0"
   },
   "devDependencies": {
-    "@aztec/accounts": "5.2.0",
-    "@aztec/noir-contracts.js": "5.2.0",
     "@aztec/pxe": "5.2.0",
     "@aztec/stdlib": "5.2.0",
     "@aztec/wallet-sdk": "5.2.0",
     "@aztec/wallets": "5.2.0",
     "@aztec-foundation/aztec-benchmark": "5.0.1",
     "@types/node": "25.0.10",
-    "commander": "14.0.1",
-    "dotenv": "16.4.7",
     "husky": "9.1.7",
     "lint-staged": "16.2.7",
     "prettier": "3.8.0",
-    "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vitest": "4.0.17"
   },
