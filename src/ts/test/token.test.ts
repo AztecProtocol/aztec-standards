@@ -249,3 +249,5 @@ describe('Token', () => {
     expect((await token.methods.balance_of_private(bob).simulate({ from: bob })).result).toBe(AMOUNT);
   }, 300_000);
 });
+
+// benchmark-filter probe: temporary comment, PR will be closed
