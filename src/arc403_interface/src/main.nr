@@ -12,14 +12,14 @@ use aztec::macros::aztec;
 /// `noir-contracts/contracts/protocol_interface` packages (FeeJuice,
 /// ContractInstanceRegistry), which use empty-bodied `#[aztec]` contracts for the same
 /// purpose. The generated call interface depends only on function names, parameter
-/// types, and the `#[external]` attributes — never on bodies.
+/// types, and the `#[external]` attributes - never on bodies.
 ///
 /// The ARC-403 specification is a draft under active discussion:
 /// https://forum.aztec.network/t/arc-403-authtoken/7887
 /// This interface tracks the draft as implemented by the tokens in this repository and
 /// may change if the specification changes.
 ///
-/// The function bodies below are empty stubs — this artifact exists to define the ABI,
+/// The function bodies below are empty stubs - this artifact exists to define the ABI,
 /// not to be deployed. WARNING: deploying this contract as-is and wiring it as a token's
 /// `auth_contract` would produce an allow-all authorizer that never denies anything.
 /// Implementations provide their own authorization logic (allowlists, KYC attestations,
