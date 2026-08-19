@@ -4,6 +4,9 @@ The `MultiToken` contract implements an ERC-1155-like multi-token with Aztec-spe
 
 Compared to the single-asset [`Token`](../token_contract/README.md), every balance-changing function takes an extra `id: Field` selecting the token, there is no `decimals` and no `total_supply`, and the on-chain event is `TransferSingle` (ERC-1155 naming) instead of `Transfer`.
 
+> [!WARNING]
+> Like everything in this repository, `MultiToken` is **experimental, unaudited software** (see the repo-level [Security Status](../../README.md#️-security-status-unaudited)). One behaviour in particular is easy to misuse: a transfer commitment does **not** bind the token id or amount — the completer chooses both. This is intentional, but it means a commitment is **not a payment guarantee**. Read the [Commitment trust model](#commitment-trust-model) before using one in an escrow or marketplace flow.
+
 ## ARC-403: Authorization Hook
 
 Like `Token`, this contract implements the optional ARC-403 authorization hook: when an `auth_contract` is configured, every transfer and burn calls it before mutating balances, and the operation reverts if the hook reverts. If `auth_contract` is the zero address, the hook is disabled and the token behaves as a plain multi-token. The interface is **id-bearing** — the hook receives the token id so policies can differ per id:

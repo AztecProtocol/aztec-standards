@@ -2,7 +2,8 @@
 
 The `Dripper` contract provides a convenient faucet mechanism for minting tokens into private or public balances. Anyone can easily invoke the functions below to request tokens for testing or development purposes.
 
-> **Note**: This contract is designed for development and testing environments only. Do not use in production. As a dev utility rather than a standard, it is intentionally outside the repository's automated test scope.
+> [!WARNING]
+> The Dripper is an **uncapped, permissionless minter**: `drip_to_public` / `drip_to_private` let *anyone* mint *any* amount (up to `u64::MAX` per call, repeatable) of any token for which the Dripper is the configured `minter`. Its only safety boundary is external — it must **never be granted `minter` on a token that holds real value**, on any network. It is a development/testing faucet only, and as a dev utility rather than a standard it is intentionally outside the repository's automated test scope.
 
 ## Public Functions
 
