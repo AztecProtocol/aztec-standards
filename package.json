@@ -35,8 +35,6 @@
     "@aztec/wallets": "5.2.0",
     "@aztec-foundation/aztec-benchmark": "5.0.1",
     "@types/node": "25.0.10",
-    "commander": "14.0.1",
-    "dotenv": "16.4.7",
     "husky": "9.1.7",
     "lint-staged": "16.2.7",
     "prettier": "3.8.0",
