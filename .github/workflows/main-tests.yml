@@ -14,4 +14,32 @@ jobs:
     uses: AztecProtocol/aztec-ci-actions/.github/workflows/run-tests.yml@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
     with:
       runner: ubuntu-latest
+      # JS tests run in the `js-tests` job below instead, which needs a job-level env var
+      # that a reusable workflow cannot inherit from its caller.
+      run-js-tests: false
     secrets: inherit
+
+  # Kept in lockstep with the `js-tests` job in pr-checks.yml — see the rationale for
+  # SEQ_BLOCK_DURATION_MS there.
+  js-tests:
+    name: JS Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # 6s blocks = mainnet geometry (10 blocks/checkpoint, 117,668 DA gas per tx). The local
+      # default of 3s blocks caps a tx at 55,882, below the ~97k the protocol guarantees for a
+      # maximal contract class registration, which the Vault class publication needs.
+      SEQ_BLOCK_DURATION_MS: '6000'
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Aztec environment
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
+        with:
+          start-pxe: 'true'
+          run-codegen: 'true'
+
+      - name: Run JS tests
+        uses: AztecProtocol/aztec-ci-actions/actions/js-tests@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1

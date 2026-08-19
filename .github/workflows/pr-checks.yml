@@ -49,7 +49,42 @@ jobs:
     uses: AztecProtocol/aztec-ci-actions/.github/workflows/run-tests.yml@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
     with:
       runner: ubuntu-latest
+      # JS tests run in the `js-tests` job below instead, which needs a job-level env var
+      # that a reusable workflow cannot inherit from its caller.
+      run-js-tests: false
     secrets: inherit
+
+  # Mirrors the `js-tests` job of aztec-ci-actions/run-tests.yml, inlined for one reason:
+  # SEQ_BLOCK_DURATION_MS below. Reusable workflows do not inherit the caller's `env`, and
+  # run-tests.yml exposes no knob for it, so the only way to reach the node is to own the job.
+  js-tests:
+    name: JS Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # `aztec start --local-network` defaults to 3s blocks. With 72s slots that is 21 blocks per
+      # checkpoint, and the per-tx DA admission limit is ceil(budget / blocks * 1.5) = 55,882.
+      # Mainnet runs 6s blocks (10 blocks per checkpoint -> 117,668); the protocol picks that
+      # multiplier precisely so "a maximal contract class registration (~97k DA gas) fits a single
+      # block under v5 mainnet geometry" (aztec stdlib, gas/tx_gas_limits.ts).
+      #
+      # Publishing the Vault contract class costs ~64k DA gas: comfortably valid on mainnet and
+      # under the ~97k the protocol guarantees, but rejected by the default local geometry. Pinning
+      # 6s blocks makes CI reproduce mainnet rather than a network stricter than the one we ship to.
+      SEQ_BLOCK_DURATION_MS: '6000'
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Aztec environment
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
+        with:
+          start-pxe: 'true'
+          run-codegen: 'true'
+
+      - name: Run JS tests
+        uses: AztecProtocol/aztec-ci-actions/actions/js-tests@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
 
   benchmark:
     # Skipping also skips this branch's baseline-artifact upload; a PR stacked on
