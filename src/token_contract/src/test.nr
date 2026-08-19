@@ -12,5 +12,6 @@ mod transfer_public_to_public;
 mod transfer_public_to_commitment;
 mod transfer_public_to_private;
 mod authorization;
+mod cancel_authwit;
 mod view;
 pub mod utils;

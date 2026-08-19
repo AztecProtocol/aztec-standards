@@ -13,4 +13,5 @@ mod burn_public;
 mod authorization;
 mod balance_of;
 mod initialize_transfer_commitment;
+mod cancel_authwit;
 pub mod utils;

@@ -82,6 +82,7 @@ All addresses are `AztecAddress`; `id` is a `Field`, `amount` is a `u128`, and `
 - `initialize_transfer_commitment(to, completer) -> Field` — Creates a partial note (privacy entrance) to be completed by later transfers/mints. Id-agnostic: the completer binds `id` and `amount`. See [Commitment trust model](#commitment-trust-model) before using a commitment as a payment guarantee.
 - `mint_to_private(to, id, amount)` — Minter mints `id` into a private balance. Fully private.
 - `burn_private(from, id, amount, nonce)` — Burns `id` from a private balance. Fully private.
+- `cancel_authwit(inner_hash)` — Cancels a private authwit the caller previously granted, by emitting its `(msg_sender, inner_hash)` nullifier so it can no longer be consumed.
 
 ### Public Functions
 
