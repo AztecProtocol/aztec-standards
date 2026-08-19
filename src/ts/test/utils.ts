@@ -4,6 +4,7 @@ import { type Wallet, AccountManager } from '@aztec/aztec.js/wallet';
 import { Fr } from '@aztec/aztec.js/fields';
 import { createAztecNodeClient, waitForNode, waitForTx } from '@aztec/aztec.js/node';
 import { type ContractInstanceWithAddress } from '@aztec/aztec.js/contracts';
+import { publishContractClass } from '@aztec/aztec.js/deployment';
 import { TxHash } from '@aztec/aztec.js/tx';
 import { EmbeddedWallet } from '@aztec/wallets/embedded';
 import { registerInitialLocalNetworkAccountsInWallet } from '@aztec/wallets/testing';
@@ -244,7 +245,19 @@ export async function deployNFTWithMinter(wallet: EmbeddedWallet, deployer: Azte
  * Each vault pool deploys its own VaultDeployer instance via initializers; there is no shared factory.
  */
 export async function ensureVaultContractClassPublished(wallet: Wallet, deployer: AztecAddress): Promise<void> {
-  await VaultContract.deploy(wallet, deployer, 1).send({ from: deployer });
+  // Publish ONLY the contract class, which is all callers need. Deploying a throwaway Vault would
+  // publish the class *and* the instance *and* run the constructor in one transaction, and the
+  // Vault's public dispatch bytecode is big enough that the combined DA gas leaves little headroom
+  // under the node's per-tx admission limit. That limit is derived from block geometry, so it is not
+  // a constant: see SEQ_BLOCK_DURATION_MS in .github/workflows/pr-checks.yml for why CI pins the
+  // local network to mainnet's.
+  //
+  // Publication emits a nullifier keyed on the class id, so a second publish of the same class is
+  // rejected with "Existing nullifier". Guard on registration state the same way DeployMethod does.
+  const contractClass = await getContractClassFromArtifact(VaultContractArtifact);
+  const { isContractClassPubliclyRegistered } = await wallet.getContractClassMetadata(contractClass.id);
+  if (isContractClassPubliclyRegistered) return;
+  await (await publishContractClass(wallet, VaultContractArtifact)).send({ from: deployer });
 }
 
 /**
