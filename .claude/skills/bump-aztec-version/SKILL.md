@@ -93,8 +93,7 @@ When everything is green: commit, open a PR to `main`, let CI pass, merge. Then 
   stopped matching. If `get_escrow`/derivation tests fail, diff the aztec-packages key-derivation
   constants/`PublicKeys` at the target ref and re-sync. Regenerate the hardcoded `get_test_vector` hashes.
 - **v5 wallet API.** `createSchnorrAccount(secret, salt)` → now needs a 3rd `GrumpkinScalar` signing key;
-  `Wallet` context types may need `EmbeddedWallet`. Deploy scripts derive the secret from the signing key
-  (`deriveSecretKeyFromSigningKey`).
+  `Wallet` context types may need `EmbeddedWallet`.
 - **Local wallet-internals shims hide upstream API drift.** `src/ts/test/utils.ts` casts wallets through
   `unknown` to a hand-written `WalletWithInternals`, so typechecking only verifies that local interface —
   not the real protected `BaseWallet` methods. Diff every shimmed method against both the old and target
