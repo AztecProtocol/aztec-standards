@@ -330,7 +330,7 @@ unconstrained fn deposit_private_to_private_on_behalf_of_other_success() {
 #[test]
 unconstrained fn deposit_private_to_private_repeated_identical_self_deposits_distinct_nonces() {
     // Regression guard for the vault's dual-use `nonce`: it is forwarded as the inner asset
-    // transfer's authwit nonce, so a SELF-caller must be able to pass a nonzero nonce — distinct
+    // transfer's authwit nonce, so a SELF-caller must be able to pass a nonzero nonce - distinct
     // nonces are what let two otherwise-identical private asset authwits both be consumed.
     // This is why the vault does not use #[authorize_once("from", "nonce")], which asserts
     // nonce == 0 whenever from == msg_sender and would revert both deposits below.

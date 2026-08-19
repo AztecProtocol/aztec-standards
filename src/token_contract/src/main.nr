@@ -506,8 +506,9 @@ pub contract Token {
      * ======================================================== */
 
     /// @notice ARC-403: calls the public authorization hook when one is configured
-    /// @dev Invoked from external public functions; no-ops when auth_contract is zero
-    /// @param from The address tokens are moved from (zero address for mints)
+    /// @dev Invoked from external public functions; no-ops when auth_contract is zero.
+    ///      Mints deliberately do not call this hook; see the ARC-403 section of the README.
+    /// @param from The address tokens are moved from
     /// @param amount The amount of tokens being moved
     #[internal("public")]
     fn _call_auth_public(from: AztecAddress, amount: u128) {
@@ -522,7 +523,7 @@ pub contract Token {
     /// @dev Invoked from external private functions; no-ops when auth_contract is zero.
     ///      Runs in private context, but the authorization contract may still create public
     ///      side effects (e.g., via enqueued public calls or public events).
-    /// @param from The address tokens are moved from (zero address for mints)
+    /// @param from The address tokens are moved from
     /// @param amount The amount of tokens being moved
     #[internal("private")]
     fn _call_auth_private(from: AztecAddress, amount: u128) {

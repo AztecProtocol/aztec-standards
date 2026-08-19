@@ -134,7 +134,7 @@ pub unconstrained fn get_private_events_from_last_tx(
 
     assert(
         query_length <= MAX_PRIVATE_EVENTS_PER_TXE_QUERY,
-        "TXE query_length exceeds MAX_PRIVATE_EVENTS_PER_TXE_QUERY — sync constants with aztec-nr txe_oracles",
+        "TXE query_length exceeds MAX_PRIVATE_EVENTS_PER_TXE_QUERY - sync constants with aztec-nr txe_oracles",
     );
 
     let mut events = BoundedVec::new();
@@ -142,7 +142,7 @@ pub unconstrained fn get_private_events_from_last_tx(
         let len = event_lengths[i];
         assert(
             len <= MAX_EVENT_SERIALIZATION_LENGTH,
-            "TXE event payload length exceeds MAX_EVENT_SERIALIZATION_LENGTH — sync constants with aztec-nr txe_oracles",
+            "TXE event payload length exceeds MAX_EVENT_SERIALIZATION_LENGTH - sync constants with aztec-nr txe_oracles",
         );
         events.push(BoundedVec::from_parts(raw_array_storage[i], len));
     }

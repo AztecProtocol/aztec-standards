@@ -22,7 +22,18 @@ Like `Token`, this contract implements the optional ARC-403 authorization hook: 
 | `burn_private` | `authorize_private` |
 | `burn_public` | `authorize_public` |
 
-Mints (`mint_to_private`, `mint_to_public`, `mint_to_commitment`) are **not** hooked — minting is already gated by the `minter` address set at construction.
+Mints (`mint_to_private`, `mint_to_public`, `mint_to_commitment`) are **not** hooked — minting is already gated by the `minter` address set at construction. As with [`Token`](../token_contract/README.md#considerations), this means an authorization contract is **not a universal kill switch**: pausing it halts transfers and burns while the `minter` can still issue new supply of any id.
+
+## Commitment trust model
+
+`initialize_transfer_commitment(to, completer)` binds the recipient, the note randomness, and the address permitted to complete the commitment. It deliberately does **not** bind `token_id` or `amount` — both are supplied by the completer at completion time. This is what makes the mechanism useful when the id or value cannot be known in private (for example when they depend on public state), and it is the documented intent.
+
+The consequence is that **a commitment is not a payment guarantee**. Whoever you nominate as `completer` chooses both which token id and how much to deposit, so a commitment is only as trustworthy as that party. Concretely:
+
+- **Safe**: you are the completer, or the completer is a party you already trust for the amount (e.g. the token's own minter, or a contract whose logic fixes the value in public execution).
+- **Unsafe**: escrow, marketplace, or handoff patterns where a counterparty completes your commitment in exchange for something you release first. A malicious completer can satisfy the commitment with a negligible amount of an arbitrary id — including one they created — and the completion will succeed.
+
+Note this is a wider surface than the single-asset [`Token`](../token_contract/README.md), where the token is implicit and only the amount is completer-chosen. If you need a commitment whose contents are guaranteed, the value must be enforced outside this primitive.
 
 ## TransferSingle Events
 
@@ -65,7 +76,7 @@ All addresses are `AztecAddress`; `id` is a `Field`, `amount` is a `u128`, and `
 - `transfer_private_to_public(from, to, id, amount, nonce)` — Spends private notes and enqueues a public credit to `to`.
 - `transfer_private_to_commitment(from, id, commitment, amount, nonce)` — Spends private notes and completes an already-initialized commitment with `(id, amount)`.
 - `transfer_public_to_private(from, to, id, amount, nonce)` — Enqueues a public debit of `from` and emits a private note to `to`.
-- `initialize_transfer_commitment(to, completer) -> Field` — Creates a partial note (privacy entrance) to be completed by later transfers/mints. Id-agnostic: the completer binds `id` and `amount`.
+- `initialize_transfer_commitment(to, completer) -> Field` — Creates a partial note (privacy entrance) to be completed by later transfers/mints. Id-agnostic: the completer binds `id` and `amount`. See [Commitment trust model](#commitment-trust-model) before using a commitment as a payment guarantee.
 - `mint_to_private(to, id, amount)` — Minter mints `id` into a private balance. Fully private.
 - `burn_private(from, id, amount, nonce)` — Burns `id` from a private balance. Fully private.
 

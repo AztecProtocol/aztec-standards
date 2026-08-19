@@ -8,6 +8,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Job-level gating (not workflow-level `paths:`) so a skipped benchmark still
+  # reports as passing for branch protection.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      benchmark: ${{ steps.filter.outputs.benchmark }}
+    steps:
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            benchmark:
+              - 'src/**/*.nr'
+              - '**/Nargo.toml'
+              - 'benchmarks/**'
+              # every benchmark imports its setup helpers from this file
+              - 'src/ts/test/utils.ts'
+              - 'tsconfig.json'
+              - 'package.json'
+              - 'yarn.lock'
+              - '.github/workflows/pr-checks.yml'
+
   format:
     name: Format
     runs-on: ubuntu-latest
@@ -27,6 +52,10 @@ jobs:
     secrets: inherit
 
   benchmark:
+    # Skipping also skips this branch's baseline-artifact upload; a PR stacked on
+    # top of a skipped branch falls back to `if_no_artifact_found: warn` downstream.
+    needs: changes
+    if: needs.changes.outputs.benchmark == 'true'
     uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@39244c9306f7b460aec570297100f3513f7ef936 # v5.0.1
     with:
       runner: ubuntu-latest

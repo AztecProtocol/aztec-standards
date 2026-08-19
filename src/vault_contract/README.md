@@ -16,7 +16,10 @@ This contract follows the [AIP-4626: Tokenized Vault Standard](https://forum.azt
 
 > **WARNING — Experimental Feature**
 >
-> The AIP-4626 functionality of this contract is not yet production-ready. Use it at your own risk. In particular there is a known overflow issue in the asset<>share conversion logic used on deposits and withdrawals. This can corrupt balances for sufficiently large inputs.
+> The AIP-4626 functionality of this contract is not yet production-ready. Use it at your own risk. Two known issues, neither currently scheduled for a fix:
+>
+> 1. **Reentrancy via a hooked asset token.** This contract's protection against reentrancy is the *order* of its operations (assets are taken in before shares are minted; shares are burned before assets are paid out), on the assumption that a token transfer is indivisible. It is not: when the asset token has an ARC-403 `auth_contract` configured, that contract is invoked *during* the transfer, before balances move, and can observe the vault mid-operation — the exact intermediate state the ordering is meant to exclude. Reading the share price at that point yields a value no completed operation would produce, which can be used to extract value belonging to other shareholders. **Only wrap an asset token whose `get_auth_contract()` is the zero address, or one whose authorization contract you fully trust.** Vaults over tokens with no hook configured are not affected.
+> 2. **Overflow in the asset↔share conversion** logic used on deposits and withdrawals, for sufficiently large inputs.
 
 ## Architecture
 

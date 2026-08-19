@@ -1,2 +1,4 @@
 aztec-nargo fmt
+# fmt may rewrite staged .nr files; re-stage them so the commit matches the working tree
+git diff --name-only --cached -- "*.nr" | xargs -r git add
 yarn lint-staged
