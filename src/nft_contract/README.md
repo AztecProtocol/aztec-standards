@@ -169,6 +169,16 @@ fn mint_to_private(to: AztecAddress, token_id: Field) { /* ... */ }
 fn burn_private(from: AztecAddress, token_id: Field, _nonce: Field) { /* ... */ }
 ```
 
+### cancel_authwit
+```rust
+/// @notice Cancels a private authentication witness the caller previously granted
+/// @dev Emits the authwit nullifier for `(msg_sender, inner_hash)`, so an authwit that has been
+///      granted but not yet consumed can no longer be used
+/// @param inner_hash The inner hash of the authwit to cancel
+#[private]
+fn cancel_authwit(inner_hash: Field) { /* ... */ }
+```
+
 ## Public Functions
 
 ### transfer_public_to_public

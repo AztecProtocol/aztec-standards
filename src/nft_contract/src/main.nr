@@ -7,6 +7,7 @@ use aztec::macros::aztec;
 pub contract NFT {
     // aztec library
     use aztec::{
+        authwit::auth::compute_authwit_nullifier,
         macros::{
             events::event,
             functions::{authorize_once, external, initializer, internal, only_self, view},
@@ -406,6 +407,17 @@ pub contract NFT {
         self.internal._update_public_token_owner(AztecAddress::zero(), token_id);
         self.internal._set_nft_exists(token_id, false);
         self.emit(Transfer { from, to: AztecAddress::zero(), token_id });
+    }
+
+    /// @notice Cancels a private authentication witness the caller previously granted
+    /// @dev Emits the authwit nullifier for `(msg_sender, inner_hash)`, so an authwit that has been
+    ///      granted but not yet consumed can no longer be used. Matches the upstream NFT contract.
+    /// @param inner_hash The inner hash of the authwit to cancel
+    #[external("private")]
+    fn cancel_authwit(inner_hash: Field) {
+        let on_behalf_of = self.msg_sender();
+        let nullifier = compute_authwit_nullifier(on_behalf_of, inner_hash);
+        self.context.push_nullifier_unsafe(nullifier);
     }
 
     /** ==========================================================

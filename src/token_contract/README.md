@@ -357,6 +357,16 @@ fn mint_to_private(to: AztecAddress, amount: u128) { /* ... */ }
 fn burn_private(from: AztecAddress, amount: u128, nonce: Field) { /* ... */ }
 ```
 
+### cancel_authwit
+```rust
+/// @notice Cancels a private authentication witness the caller previously granted
+/// @dev Emits the authwit nullifier for `(msg_sender, inner_hash)`, so an authwit that has been
+///      granted but not yet consumed can no longer be used
+/// @param inner_hash The inner hash of the authwit to cancel
+#[private]
+fn cancel_authwit(inner_hash: Field) { /* ... */ }
+```
+
 ## ARC-403 Authorization Hook
 
 The authorization contract address is set at construction via the `auth_contract` parameter on both constructors and stored as an immutable field. A zero address disables the hook. When set, each hooked function calls either `authorize_private(from, amount, selector)` or `authorize_public(from, amount, selector)` on the authorization contract after authwit validation and before any balance mutation. The token operation reverts if the authorization call reverts. The hook variant matches the calling function's context — private functions call `authorize_private`, public functions call `authorize_public` — and the `selector` passed is the calling function's own selector.
