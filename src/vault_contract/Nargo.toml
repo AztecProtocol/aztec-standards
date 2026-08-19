@@ -8,3 +8,4 @@ type = "contract"
 aztec = { git = "https://github.com/aztec-labs-eng/aztec-nr", tag = "v6.0.0-rc.1", directory = "aztec" }
 token_contract = { path = "../token_contract" }
 generic_proxy = { path = "../generic_proxy" }
+bignum = { git = "https://github.com/noir-lang/noir-bignum", tag = "v0.10.0" }
