@@ -1,17 +1,17 @@
-import { deriveKeys } from '@aztec/stdlib/keys';
-import { PublicKeys } from '@aztec/aztec.js/keys';
-import { type AztecNode } from '@aztec/aztec.js/node';
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { type EmbeddedWallet } from '@aztec/wallets/embedded';
-import { BlockNumber } from '@aztec/foundation/branded-types';
-import { ContractDeployer } from '@aztec/aztec.js/deployment';
-import { Fr } from '@aztec/aztec.js/fields';
-import { PublicKey } from '@aztec/stdlib/keys';
+import { deriveKeys } from '@aztec-labs/stdlib/keys';
+import { PublicKeys } from '@aztec-labs/aztec.js/keys';
+import { type AztecNode } from '@aztec-labs/aztec.js/node';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { type EmbeddedWallet } from '@aztec-labs/wallets/embedded';
+import { BlockNumber } from '@aztec-labs/foundation/branded-types';
+import { ContractDeployer } from '@aztec-labs/aztec.js/deployment';
+import { Fr } from '@aztec-labs/aztec.js/fields';
+import { PublicKey } from '@aztec-labs/stdlib/keys';
 import {
   getContractInstanceFromInstantiationParams,
   getContractClassFromArtifact,
   type ContractInstanceWithAddress,
-} from '@aztec/aztec.js/contracts';
+} from '@aztec-labs/aztec.js/contracts';
 
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 

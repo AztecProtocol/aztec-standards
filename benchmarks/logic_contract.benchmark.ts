@@ -1,10 +1,10 @@
 // Import Aztec dependencies
-import { Fr } from '@aztec/aztec.js/fields';
-import { deriveKeys } from '@aztec/stdlib/keys';
-import type { EmbeddedWallet } from '@aztec/wallets/embedded';
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { getContractClassFromArtifact } from '@aztec/aztec.js/contracts';
-import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
+import { Fr } from '@aztec-labs/aztec.js/fields';
+import { deriveKeys } from '@aztec-labs/stdlib/keys';
+import type { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { getContractClassFromArtifact } from '@aztec-labs/aztec.js/contracts';
+import type { ContractFunctionInteractionCallIntent } from '@aztec-labs/aztec.js/authorization';
 
 // Import the new Benchmark base class and context
 import { Benchmark, BenchmarkContext } from '@aztec-foundation/aztec-benchmark';

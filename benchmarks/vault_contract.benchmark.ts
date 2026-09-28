@@ -1,7 +1,7 @@
-import type { EmbeddedWallet } from '@aztec/wallets/embedded';
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { AuthWitness } from '@aztec/aztec.js/authorization';
-import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
+import type { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { AuthWitness } from '@aztec-labs/aztec.js/authorization';
+import type { ContractFunctionInteractionCallIntent } from '@aztec-labs/aztec.js/authorization';
 
 import { parseUnits } from 'viem';
 

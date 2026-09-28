@@ -1,11 +1,11 @@
-import { Fr, GrumpkinScalar } from '@aztec/aztec.js/fields';
-import { type AztecNode } from '@aztec/aztec.js/node';
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { type EmbeddedWallet } from '@aztec/wallets/embedded';
-import { ContractDeployer } from '@aztec/aztec.js/deployment';
-import { SetPublicAuthwitContractInteraction, lookupValidity } from '@aztec/aztec.js/authorization';
-import { type ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
-import { getContractInstanceFromInstantiationParams } from '@aztec/aztec.js/contracts';
+import { Fr, GrumpkinScalar } from '@aztec-labs/aztec.js/fields';
+import { type AztecNode } from '@aztec-labs/aztec.js/node';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { type EmbeddedWallet } from '@aztec-labs/wallets/embedded';
+import { ContractDeployer } from '@aztec-labs/aztec.js/deployment';
+import { SetPublicAuthwitContractInteraction, lookupValidity } from '@aztec-labs/aztec.js/authorization';
+import { type ContractFunctionInteractionCallIntent } from '@aztec-labs/aztec.js/authorization';
+import { getContractInstanceFromInstantiationParams } from '@aztec-labs/aztec.js/contracts';
 
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 

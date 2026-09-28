@@ -8,15 +8,13 @@ use aztec::{
     },
     note::{
         note_interface::{NoteHash, NoteType},
+        partial_note::{DOM_SEP__NOTE_COMPLETION_LOG_TAG, DOM_SEP__PARTIAL_NOTE_COMMITMENT},
         utils::{compute_note_hash, compute_note_nullifier},
     },
     oracle::random::random,
     protocol::{
         address::AztecAddress,
-        constants::{
-            DOM_SEP__NOTE_COMPLETION_LOG_TAG, DOM_SEP__PARTIAL_NOTE_COMMITMENT,
-            DOM_SEP__PARTIAL_NOTE_VALIDITY_COMMITMENT,
-        },
+        constants::DOM_SEP__PARTIAL_NOTE_VALIDITY_COMMITMENT,
         hash::{compute_log_tag, poseidon2_hash_with_separator},
         traits::{Deserialize, Hash, Packable, Serialize, ToField},
     },
