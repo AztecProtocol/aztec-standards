@@ -8,16 +8,16 @@ import {
   PRIVATE_ADDRESS,
 } from './utils.js';
 
-import { Fr, GrumpkinScalar } from '@aztec/aztec.js/fields';
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { type EmbeddedWallet } from '@aztec/wallets/embedded';
-import { ContractDeployer } from '@aztec/aztec.js/deployment';
-import { getContractInstanceFromInstantiationParams } from '@aztec/aztec.js/contracts';
+import { Fr, GrumpkinScalar } from '@aztec-labs/aztec.js/fields';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { type EmbeddedWallet } from '@aztec-labs/wallets/embedded';
+import { ContractDeployer } from '@aztec-labs/aztec.js/deployment';
+import { getContractInstanceFromInstantiationParams } from '@aztec-labs/aztec.js/contracts';
 import {
   ContractFunctionInteractionCallIntent,
   SetPublicAuthwitContractInteraction,
   lookupValidity,
-} from '@aztec/aztec.js/authorization';
+} from '@aztec-labs/aztec.js/authorization';
 
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 

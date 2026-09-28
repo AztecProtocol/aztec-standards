@@ -8,12 +8,6 @@ EXPORT_DIR="export/${PROJECT_NAME}"
 mkdir -p dist/artifacts/
 yarn tsc src/artifacts/*.ts --outDir dist/artifacts/ --skipLibCheck --target es2020 --module nodenext --moduleResolution nodenext --resolveJsonModule --declaration
 
-# ── Inspect contracts ────────────────────────────────────────────────────────
-for f in target/*.json; do
-  [ -f "$f" ] || continue
-  aztec inspect-contract "$f"
-done
-
 # ── Prepare export directory ─────────────────────────────────────────────────
 mkdir -p "${EXPORT_DIR}/artifacts"
 mkdir -p "${EXPORT_DIR}/dist"
@@ -24,8 +18,8 @@ cp -r dist/artifacts/* "${EXPORT_DIR}/artifacts/"
 # Copy compiled JS artifacts to dist/ (for pre-release dist.tar.gz)
 cp -r dist/artifacts/* "${EXPORT_DIR}/dist/"
 
-# Copy compiled Noir contracts (excluding the *.json.bak backups that
-# `aztec inspect-contract` leaves behind — they ~double the package size)
+# Copy compiled Noir contracts, minus the *.json.bak pre-postprocessing copies that `aztec compile`
+# (its `bb aztec_process` step) leaves next to each artifact — they ~double the package size
 cp -r target "${EXPORT_DIR}/"
 find "${EXPORT_DIR}/target" -name '*.bak' -delete
 

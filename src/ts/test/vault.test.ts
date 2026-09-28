@@ -11,10 +11,10 @@ import {
   PRIVATE_ADDRESS,
 } from './utils.js';
 
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { type EmbeddedWallet } from '@aztec/wallets/embedded';
-import { type ContractFunctionInteraction } from '@aztec/aztec.js/contracts';
-import { type TxHash } from '@aztec/aztec.js/tx';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { type EmbeddedWallet } from '@aztec-labs/wallets/embedded';
+import { type ContractFunctionInteraction } from '@aztec-labs/aztec.js/contracts';
+import { type TxHash } from '@aztec-labs/aztec.js/tx';
 
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 

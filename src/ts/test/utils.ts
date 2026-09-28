@@ -1,39 +1,39 @@
-import { createLogger } from '@aztec/aztec.js/log';
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import { type Wallet, AccountManager } from '@aztec/aztec.js/wallet';
-import { Fr } from '@aztec/aztec.js/fields';
-import { createAztecNodeClient, waitForNode, waitForTx } from '@aztec/aztec.js/node';
-import { type ContractInstanceWithAddress } from '@aztec/aztec.js/contracts';
-import { TxHash } from '@aztec/aztec.js/tx';
-import { EmbeddedWallet } from '@aztec/wallets/embedded';
-import { registerInitialLocalNetworkAccountsInWallet } from '@aztec/wallets/testing';
-import { PublicKeys } from '@aztec/stdlib/keys';
+import { createLogger } from '@aztec-labs/aztec.js/log';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import { type Wallet, AccountManager } from '@aztec-labs/aztec.js/wallet';
+import { Fr } from '@aztec-labs/aztec.js/fields';
+import { createAztecNodeClient, waitForNode, waitForTx } from '@aztec-labs/aztec.js/node';
+import { type ContractInstanceWithAddress } from '@aztec-labs/aztec.js/contracts';
+import { TxHash } from '@aztec-labs/aztec.js/tx';
+import { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
+import { registerInitialLocalNetworkAccountsInWallet } from '@aztec-labs/wallets/testing';
+import { PublicKeys } from '@aztec-labs/stdlib/keys';
 
 import {
   DeployOptions,
   ContractFunctionInteraction,
   getContractClassFromArtifact,
   getContractInstanceFromInstantiationParams,
-} from '@aztec/aztec.js/contracts';
-import { AuthWitness, SetPublicAuthwitContractInteraction } from '@aztec/aztec.js/authorization';
-import { getPublicEvents, type EventCursor } from '@aztec/aztec.js/events';
-import { getDefaultInitializer, getInitializer } from '@aztec/stdlib/abi';
+} from '@aztec-labs/aztec.js/contracts';
+import { AuthWitness, SetPublicAuthwitContractInteraction } from '@aztec-labs/aztec.js/authorization';
+import { getPublicEvents, type EventCursor } from '@aztec-labs/aztec.js/events';
+import { getDefaultInitializer, getInitializer } from '@aztec-labs/stdlib/abi';
 import {
   computeInitializationHash,
   computeSaltedInitializationHash,
   computeContractAddressFromInstance,
-} from '@aztec/stdlib/contract';
+} from '@aztec-labs/stdlib/contract';
 
-import { getPXEConfig } from '@aztec/pxe/server';
-import { type TxExecutionRequest, type TxProvingResult } from '@aztec/stdlib/tx';
-import { type ExecutionPayload } from '@aztec/stdlib/tx';
-import { type FeeOptions } from '@aztec/wallet-sdk/base-wallet';
-import { Barretenberg } from '@aztec/bb.js';
+import { getPXEConfig } from '@aztec-labs/pxe/server';
+import { type TxExecutionRequest, type TxProvingResult } from '@aztec-labs/stdlib/tx';
+import { type ExecutionPayload } from '@aztec-labs/stdlib/tx';
+import { type FeeOptions } from '@aztec-labs/wallet-sdk/base-wallet';
+import { Barretenberg } from '@aztec-foundation/bb.js';
 
 /**
  * Subset of protected BaseWallet methods needed to prove a tx and extract private return values.
  * These are not part of the public Wallet interface, so we define a local type to avoid `as any`.
- * Signatures must be kept in lockstep with `BaseWallet` (`@aztec/wallet-sdk/base-wallet`) on every
+ * Signatures must be kept in lockstep with `BaseWallet` (`@aztec-labs/wallet-sdk/base-wallet`) on every
  * version bump — they are internal and can change without a deprecation cycle.
  */
 interface WalletWithInternals {
@@ -435,11 +435,8 @@ export async function setPublicAuthWit(
  * private return value (the commitment) of the SAME execution that gets submitted. Do NOT replace
  * this with simulate()-then-send(): `initialize_transfer_commitment` derives its commitment from
  * randomness drawn fresh on every private execution, so a simulated commitment would never match
- * the partial note the sent tx actually creates. As of @aztec/* 5.1.0 no public wallet API exposes
- * private return values (BaseWallet.sendTx discards privateExecutionResult) — re-check on bumps.
- *
- * Proves an `initialize_transfer_commitment` interaction, extracts the private return value
- * (the partial-note commitment), submits the proven tx, and waits for it to land.
+ * the partial note the sent tx actually creates. As of @aztec-labs/* 6.0.0-rc.1 no public wallet API
+ * exposes private return values (BaseWallet.sendTx discards privateExecutionResult) — re-check on bumps.
  */
 async function proveExtractAndSendCommitment(
   interaction: ContractFunctionInteraction,

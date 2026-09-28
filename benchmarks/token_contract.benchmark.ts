@@ -1,7 +1,7 @@
-import type { EmbeddedWallet } from '@aztec/wallets/embedded';
-import { AztecAddress } from '@aztec/aztec.js/addresses';
-import type { ContractFunctionInteractionCallIntent } from '@aztec/aztec.js/authorization';
-import { Fr, GrumpkinScalar } from '@aztec/aztec.js/fields';
+import type { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
+import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
+import type { ContractFunctionInteractionCallIntent } from '@aztec-labs/aztec.js/authorization';
+import { Fr, GrumpkinScalar } from '@aztec-labs/aztec.js/fields';
 
 import { parseUnits } from 'viem';
 

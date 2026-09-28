@@ -1,6 +1,6 @@
 {
   "name": "@aztec-foundation/aztec-standards",
-  "version": "5.2.0",
+  "version": "6.0.0-rc.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AztecProtocol/aztec-standards.git"
@@ -26,14 +26,16 @@
     "*.ts": "prettier --write -u"
   },
   "dependencies": {
-    "@aztec/aztec.js": "5.2.0"
+    "@aztec-labs/aztec.js": "6.0.0-rc.1"
   },
   "devDependencies": {
-    "@aztec/pxe": "5.2.0",
-    "@aztec/stdlib": "5.2.0",
-    "@aztec/wallet-sdk": "5.2.0",
-    "@aztec/wallets": "5.2.0",
     "@aztec-foundation/aztec-benchmark": "5.0.1",
+    "@aztec-foundation/bb.js": "6.0.0-rc.1",
+    "@aztec-labs/foundation": "6.0.0-rc.1",
+    "@aztec-labs/pxe": "6.0.0-rc.1",
+    "@aztec-labs/stdlib": "6.0.0-rc.1",
+    "@aztec-labs/wallet-sdk": "6.0.0-rc.1",
+    "@aztec-labs/wallets": "6.0.0-rc.1",
     "@types/node": "25.0.10",
     "husky": "9.1.7",
     "lint-staged": "16.2.7",
@@ -42,7 +44,7 @@
     "vitest": "4.0.17"
   },
   "config": {
-    "aztecVersion": "5.2.0"
+    "aztecVersion": "6.0.0-rc.1"
   },
   "engines": {
     "node": ">=22"
