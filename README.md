@@ -4,6 +4,8 @@
 
 Aztec Standards is a comprehensive collection of reusable, standardized contracts for the Aztec Network. It provides a robust foundation of token primitives and utilities that support both private and public operations, empowering developers to build innovative privacy-preserving applications with ease.
 
+The npm package ships compiled contract artifacts and TypeScript wrappers but declares no dependencies: the wrappers import `@aztec-labs/aztec.js` (Aztec 6 renamed the SDK scope from `@aztec/*`), so install it at the version in the package's `config.aztecVersion`.
+
 ## ⚠️ Security Status: Unaudited
 
 > [!WARNING]
