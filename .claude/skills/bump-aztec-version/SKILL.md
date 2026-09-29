@@ -129,9 +129,6 @@ When everything is green: commit, open a PR to `main`, let CI pass, merge. Then 
     message-signing/fallback keys, escrow addresses stopped matching. If `get_escrow`/derivation tests
     fail, diff the key-derivation constants/`PublicKeys` at the target ref and re-sync. Regenerate the
     hardcoded `get_test_vector` hashes.
-  - The escrow test crate's `utils.nr` duplicates the crate-private TXE oracle `aztec_txe_getPrivateEvents`.
-    Its return type must match the target's `aztec/src/test/helpers/txe_oracles.nr` exactly (v6:
-    `BoundedVec<BoundedVec<Field, 10>, 5>`; v5 returned a raw tuple).
   - NFT/MultiToken partial notes import aztec-nr domain separators; v6 moved
     `DOM_SEP__PARTIAL_NOTE_COMMITMENT` and `DOM_SEP__NOTE_COMPLETION_LOG_TAG` to `aztec::note::partial_note`.
 - **Removed CLI commands.** v6 dropped `aztec inspect-contract` (among others); check `scripts/` and
