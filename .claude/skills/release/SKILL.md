@@ -80,8 +80,15 @@ and npm versions are **immutable**. Before running the push, show the user the e
 even for an rc. (The local tag/guard steps are safe to run first; only the `git push origin` line is gated.)
 
 ```bash
-git tag -d "v$TARGET" 2>/dev/null; git push origin ":refs/tags/v$TARGET" 2>/dev/null   # clear any stale/orphaned tag
-git tag "v$TARGET" && git push origin "v$TARGET"   # fires release.yml (tag-triggered; uses the file at this commit)
+# A release tag is never moved or re-created: npm versions are immutable and the provenance names the tagged commit.
+if out=$(npm view "@aztec-foundation/aztec-standards@$TARGET" version --prefer-online 2>&1); then
+  echo "STOP: $TARGET is already on npm ($out)"; exit 1
+elif ! grep -q E404 <<< "$out"; then
+  echo "STOP: npm lookup failed, so an earlier publish can't be ruled out"; exit 1
+fi
+rc=0; git ls-remote --exit-code --tags origin "refs/tags/v$TARGET" > /dev/null || rc=$?   # 2 = no such tag
+[ "$rc" -eq 2 ] || { echo "STOP: v$TARGET already exists on origin, or origin is unreachable (exit $rc); see Gotchas"; exit 1; }
+git tag --no-sign "v$TARGET" && git push origin "refs/tags/v$TARGET"   # lightweight, like every release tag; fires release.yml
 ```
 
 Every tag — rc included — parks on the `Production` environment waiting for a reviewer. Verify the run
@@ -152,3 +159,8 @@ _smoke_ step alone (propagation lag) is not a failed release — confirm the pub
 - **Reruns cannot repair dist-tags.** npm OIDC authenticates `npm publish`, not `npm dist-tag add`. A
   rerun skips an already-published version only when its expected dist-tag is already correct; otherwise
   the workflow fails with instructions to repair the tag using an authorized npm account.
+- **Never move a release tag.** A failed run is re-run, not re-tagged. The one exception is a tag pushed
+  to the wrong commit whose run never reached `Publish to NPM with OIDC` (e.g. the tag/`package.json`
+  check failed). Before deleting such a tag, confirm with `--prefer-online` that npm answers `E404` for the
+  version, that the run's publish step never started, and that no run for the tag is queued, waiting or in
+  progress; then, with the user's explicit OK, `git push origin :refs/tags/v<version>` and tag again.
