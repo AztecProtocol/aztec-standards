@@ -93,9 +93,10 @@ jobs:
     # top of a skipped branch falls back to `if_no_artifact_found: warn` downstream.
     needs: changes
     if: needs.changes.outputs.benchmark == 'true'
-    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@39244c9306f7b460aec570297100f3513f7ef936 # v5.0.1
+    uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@d623993df314206cf1fd08443d10631976bdcf1d # aztec-benchmark#3, pre-release
     with:
       runner: ubuntu-latest
+      block-duration-ms: "6000" # mainnet geometry; see SEQ_BLOCK_DURATION_MS on js-tests
     permissions:
       contents: read
       pull-requests: write
