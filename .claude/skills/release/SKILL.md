@@ -48,7 +48,8 @@ a silent no-op on the real package. Always start with `cd "$(git rev-parse --sho
   git checkout main && git pull
   git checkout -b rehearse/vX.Y.Z-rc.N
   npm version X.Y.Z-rc.N --no-git-tag-version      # edits the tracked ROOT package.json
-  git commit -am "chore: rehearse X.Y.Z-rc.N"
+  git commit -S -am "chore: rehearse X.Y.Z-rc.N"   # signed: Step 3 requires a Verified commit
+  git push -u origin rehearse/vX.Y.Z-rc.N          # so GitHub can verify it before the tag exists
   ```
 - **production:** `main` is already `X.Y.Z` — no bump, no branch; you'll tag `main` directly.
 
@@ -65,18 +66,20 @@ case "$TARGET" in
   *) DIST="latest";;
 esac   # mirrors release.yml
 ENVIRONMENT="Production"   # every tag, rc included
-echo "releasing v$TARGET → dist-tag '$DIST' via '$ENVIRONMENT'"
+SHA=$(git rev-parse HEAD)  # Step 4 tags exactly this commit
+echo "releasing v$TARGET ($SHA) → dist-tag '$DIST' via '$ENVIRONMENT'"
 [ "$(node -p "require('./package.json').version")" = "$TARGET" ] || { echo "ABORT: root package.json != $TARGET (bump didn't land — wrong dir / edited export/?)"; exit 1; }
 git diff --quiet HEAD -- package.json || { echo "ABORT: bump uncommitted — the tag must point at the committed bump"; exit 1; }
 grep -q "runs-on: ubuntu-latest$" .github/workflows/release.yml || echo "WARN: release.yml runner may be wrong (rebase onto main?)"
 grep -q "^    environment: Production$" .github/workflows/release.yml || { echo "ABORT: release.yml does not pin environment: Production — the npm trusted publisher will reject the OIDC token"; exit 1; }
+[ "$(gh api "repos/AztecProtocol/aztec-standards/commits/$SHA" --jq .commit.verification.verified)" = true ] || { echo "ABORT: GitHub shows no verified signature on $SHA (unsigned, rebase-merged, or not pushed); see Gotchas"; exit 1; }
 ```
 
 ## Step 4 — tag & push
 
 ⚠️ **STOP — the tag push is the point of no return.** It fires `release.yml`, which publishes to npm,
 and npm versions are **immutable**. Before running the push, show the user the exact `TARGET`, `DIST`,
-`ENVIRONMENT`, and target commit, and get explicit confirmation. Do **not** push on your own initiative —
+`ENVIRONMENT`, and `SHA`, and get explicit confirmation. Do **not** push on your own initiative —
 even for an rc. (The local tag/guard steps are safe to run first; only the `git push origin` line is gated.)
 
 ```bash
@@ -88,7 +91,7 @@ elif ! grep -q E404 <<< "$out"; then
 fi
 rc=0; git ls-remote --exit-code --tags origin "refs/tags/v$TARGET" > /dev/null || rc=$?   # 2 = no such tag
 [ "$rc" -eq 2 ] || { echo "STOP: v$TARGET already exists on origin, or origin is unreachable (exit $rc); see Gotchas"; exit 1; }
-git tag --no-sign "v$TARGET" && git push origin "refs/tags/v$TARGET"   # lightweight, like every release tag; fires release.yml
+git tag --no-sign "v$TARGET" "$SHA" && git push origin "refs/tags/v$TARGET"   # lightweight: GitHub shows the commit's signature (Step 3); fires release.yml
 ```
 
 Every tag — rc included — parks on the `Production` environment waiting for a reviewer. Verify the run
@@ -164,3 +167,7 @@ _smoke_ step alone (propagation lag) is not a failed release — confirm the pub
   check failed). Before deleting such a tag, confirm with `--prefer-online` that npm answers `E404` for the
   version, that the run's publish step never started, and that no run for the tag is queued, waiting or in
   progress; then, with the user's explicit OK, `git push origin :refs/tags/v<version>` and tag again.
+- **Tag only a verified commit.** A lightweight tag has no signature of its own; GitHub shows the tagged
+  commit's, which Step 3 requires GitHub to have verified. Merge PRs into `main` with squash, which GitHub signs.
+  "Rebase and merge" re-creates each commit without a signature, which is how `v6.0.0-rc.1` ended up on an
+  unverified commit. A published release can't be fixed: re-signing changes the SHA the provenance names.
