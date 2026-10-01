@@ -29,7 +29,7 @@
     "@aztec-labs/aztec.js": "6.0.0-rc.1"
   },
   "devDependencies": {
-    "@aztec-foundation/aztec-benchmark": "5.0.1",
+    "@aztec-foundation/aztec-benchmark": "6.0.0-rc.1",
     "@aztec-foundation/bb.js": "6.0.0-rc.1",
     "@aztec-labs/foundation": "6.0.0-rc.1",
     "@aztec-labs/pxe": "6.0.0-rc.1",
