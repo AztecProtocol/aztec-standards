@@ -38,9 +38,23 @@ The consequence is that **a commitment is not a payment guarantee**. Whoever you
 
 Note this is a wider surface than the single-asset [`Token`](../token_contract/README.md), where the token is implicit and only the amount is completer-chosen. If you need a commitment whose contents are guaranteed, the value must be enforced outside this primitive.
 
+The rest of the commitment contract, shared with `Token`:
+
+- **Owner.** The commitment is owned by `to`, who learns about it through an unconstrained message, so `to`, or a contract acting for it, should create it.
+- **Completer.** The completer is checked against `msg_sender` of the completing call (`transfer_private_to_commitment`, `transfer_public_to_commitment`, `mint_to_commitment`). Under an authwit that is the caller, not `from`, so the commitment must name the caller.
+- **What is public.** Completing publishes the id and amount in a log tagged by the commitment, including from `transfer_private_to_commitment`, which emits it unencrypted through the private-log channel. The owner stays private.
+- **Timing.** `transfer_private_to_commitment` needs the commitment to come from an earlier block. Public completion also works in the transaction that created it.
+- **Complete at most once.** Nothing stops a second completion, and it is paid for again, but the owner's wallet processes only the first completion log it finds, so reuse can leave later payments undiscovered and the funds out of reach of normal wallet discovery. "Safe" above does not make reuse safe.
+- **Zero.** Public completion rejects `amount == 0`. `transfer_private_to_commitment` accepts it and completes the commitment with an empty note.
+- **Refunds.** There is no `transfer_private_to_public_with_commitment`. A contract returning change privately calls `initialize_transfer_commitment(user, self)` alongside `transfer_private_to_public`, then completes the commitment publicly with the change.
+
+## Supply bound
+
+There is no total supply. The minter must keep each id's total at or below `u128::MAX`: private balances are summed in `u128`, so for an owner holding more, `balance_of_private` overflows and any transfer whose note selection sums past `u128::MAX` reverts.
+
 ## TransferSingle Events
 
-A public `TransferSingle { from, to, id, amount }` event is emitted only on operations whose token id is already revealed on-chain (any public-balance write or public commitment completion). Fully-private operations emit nothing, since an id-bearing event would leak the token id.
+A public `TransferSingle { from, to, id, amount }` event is emitted only on operations whose token id is already revealed on-chain (any public-balance write or public commitment completion). Private operations emit nothing, since an id-bearing event would leak the token id. `transfer_private_to_commitment` emits no event either, but still publishes the id and amount (see [Commitment trust model](#commitment-trust-model)).
 
 | Operation | Event Pattern |
 |-----------|---------------|
@@ -77,9 +91,9 @@ All addresses are `AztecAddress`; `id` is a `Field`, `amount` is a `u128`, and `
 
 - `transfer_private_to_private(from, to, id, amount, nonce)` — Moves `amount` of `id` between private balances. Fully private (no event, no public effect).
 - `transfer_private_to_public(from, to, id, amount, nonce)` — Spends private notes and enqueues a public credit to `to`.
-- `transfer_private_to_commitment(from, id, commitment, amount, nonce)` — Spends private notes and completes an already-initialized commitment with `(id, amount)`.
+- `transfer_private_to_commitment(from, id, commitment, amount, nonce)` — Spends private notes and completes, in private, a commitment from an earlier block with `(id, amount)`, which are published. The caller must be the commitment's completer.
 - `transfer_public_to_private(from, to, id, amount, nonce)` — Enqueues a public debit of `from` and emits a private note to `to`.
-- `initialize_transfer_commitment(to, completer) -> Field` — Creates a partial note (privacy entrance) to be completed by later transfers/mints. Id-agnostic: the completer binds `id` and `amount`. See [Commitment trust model](#commitment-trust-model) before using a commitment as a payment guarantee.
+- `initialize_transfer_commitment(to, completer) -> Field` — Creates a commitment owned by `to` that only `completer` can complete, once. Id-agnostic: the completer binds `id` and `amount`. See [Commitment trust model](#commitment-trust-model) before using a commitment as a payment guarantee.
 - `mint_to_private(to, id, amount)` — Minter mints `id` into a private balance. Fully private.
 - `burn_private(from, id, amount, nonce)` — Burns `id` from a private balance. Fully private.
 - `cancel_authwit(inner_hash)` — Cancels a private authwit the caller previously granted, by emitting its `(msg_sender, inner_hash)` nullifier so it can no longer be consumed.
@@ -87,9 +101,9 @@ All addresses are `AztecAddress`; `id` is a `Field`, `amount` is a `u128`, and `
 ### Public Functions
 
 - `transfer_public_to_public(from, to, id, amount, nonce)` — Moves `amount` of `id` between public balances.
-- `transfer_public_to_commitment(from, id, commitment, amount, nonce)` — Debits `from`'s public balance and completes a commitment prepared by `initialize_transfer_commitment`.
+- `transfer_public_to_commitment(from, id, commitment, amount, nonce)` — Debits `from`'s public balance and completes a commitment prepared by `initialize_transfer_commitment`. The caller must be the commitment's completer.
 - `mint_to_public(to, id, amount)` — Minter mints `id` into a public balance.
-- `mint_to_commitment(id, commitment, amount)` — Minter finalizes a mint into a commitment.
+- `mint_to_commitment(id, commitment, amount)` — Minter mints into a commitment; the minter must be its completer.
 - `burn_public(from, id, amount, nonce)` — Burns `id` from a public balance.
 
 ### View Functions

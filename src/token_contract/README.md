@@ -24,16 +24,36 @@ The contract emits a public `Transfer { from, to, amount }` event on every balan
 | Burn from private | `Transfer(PRIVATE_ADDRESS, 0x0, amount)` |
 | Public-to-public | `Transfer(from, to, amount)` |
 | Public-to-private | `Transfer(from, PRIVATE_ADDRESS, amount)` |
-| Private-to-public | `Transfer(PRIVATE_ADDRESS, to, amount)` |
+| Private-to-public (with or without commitment) | `Transfer(PRIVATE_ADDRESS, to, amount)` |
+| Public-to-commitment | `Transfer(from, PRIVATE_ADDRESS, amount)` |
+| Mint to commitment | `Transfer(0x0, PRIVATE_ADDRESS, amount)` |
 | Private-to-private | _(no public events)_ |
+| Private-to-commitment | _(no public events; the amount is still published, see [Commitments](#commitments))_ |
 
 **Sentinel values:** `0x0` denotes mint origin (`from`) or burn destination (`to`), following ERC-20. `PRIVATE_ADDRESS` (sha224 of `"PRIVATE_ADDRESS"`) denotes the private side of a balance change when the counterpart cannot be revealed.
+
+## Commitments
+
+A commitment is a partial note: a private note whose owner is fixed when it is created and whose amount is filled in later. Completing it needs only the commitment, not the owner's address, and does not publish the owner. That is privacy from chain observers, not from the completer: a contract that creates a refund commitment knows whom it refunds.
+
+- **Create.** `initialize_transfer_commitment(to, completer)` returns a commitment owned by `to`. `to` learns about it through an unconstrained message, so `to`, or a contract acting for it, should be the caller. `transfer_private_to_public_with_commitment` returns one owned by `from` for refunds (below).
+- **Complete.** Only `completer` can, as `msg_sender` of `transfer_public_to_commitment`, `transfer_private_to_commitment` or `mint_to_commitment`. Under an authwit that is the caller, not `from`. The completer picks the amount: a commitment is a request to be paid, not a guarantee.
+- **What is bound.** The commitment binds the owner and randomness, and the validity nullifier pushed at creation binds the completer. The amount and storage slot are only fixed by the completed note hash.
+- **What is public.** Completing publishes the amount in a log tagged by the commitment, including from `transfer_private_to_commitment`, which emits it unencrypted through the private-log channel. The owner stays private.
+- **Timing.** `transfer_private_to_commitment` needs the commitment to come from an earlier block. Public completion also works in the transaction that created it.
+- **Complete at most once.** Nothing stops a second completion, and it is paid for again, but the owner's wallet processes only the first completion log it finds, so reuse can leave later payments undiscovered and the funds out of reach of normal wallet discovery.
+- **Zero.** Public completion rejects `amount == 0`. `transfer_private_to_commitment` accepts it and completes the commitment with an empty note.
+
+### Refunds
+
+`transfer_private_to_public_with_commitment(from, to, amount, nonce)` moves `amount` to `to`'s public balance and returns a commitment owned by `from` that only `msg_sender` can complete. A contract (an AMM, a fee payment contract) calls it with `from`'s authwit, keeps what it needs, and returns the rest privately with `transfer_public_to_commitment(self, commitment, change, 0)`. This mirrors `transfer_to_public_and_prepare_private_balance_increase` in the Aztec Labs token.
+
 ## Storage Fields
 
 - `name: str<31>`: Token name (compressed).
 - `symbol: str<31>`: Token symbol (compressed).
 - `decimals: u8`: Decimal precision.
-- `private_balances: Map<AztecAddress, BalanceSet>`: Private balances per account.
+- `private_balances: Owned<BalanceSet>`: Private balances; `private_balances.at(owner)` is one account's note set.
 - `public_balances: Map<AztecAddress, u128>`: Public balances per account.
 - `total_supply: u128`: Total token supply.
 - `minter: AztecAddress`: Authorized minter address (if set).
@@ -180,11 +200,10 @@ fn transfer_public_to_public(
 
 ### transfer_public_to_commitment
 ```rust
-/// @notice Finalizes a transfer of token `amount` from public balance of `from` to a commitment of `to`
-/// @dev The transfer must be prepared by calling `initialize_transfer_commitment` first and the resulting
-/// `commitment` must be passed as an argument to this function
+/// @notice Transfer tokens from public balance to a commitment
+/// @dev `msg_sender` must be the commitment's completer: the caller, which is not `from` under an authwit.
 /// @param from The address of the sender
-/// @param commitment The Field representing the commitment (privacy entrance)
+/// @param commitment The commitment to complete
 /// @param amount The amount of tokens to transfer
 /// @param nonce The nonce used for authwit
 #[public]
@@ -211,9 +230,9 @@ fn mint_to_public(
 
 ### mint_to_commitment
 ```rust
-/// @notice Finalizes a mint to a commitment
-/// @dev Finalizes a mint to a commitment and updates the total supply
-/// @param commitment The Field representing the mint commitment (privacy entrance)
+/// @notice Mints tokens to a commitment
+/// @dev The minter must be the commitment's completer. Increases the total supply.
+/// @param commitment The commitment to complete
 /// @param amount The amount of tokens to mint
 #[public]
 fn mint_to_commitment(
@@ -258,13 +277,13 @@ fn transfer_private_to_public(
 
 ### transfer_private_to_public_with_commitment
 ```rust
-/// @notice Transfer tokens from private balance to public balance with a commitment
-/// @dev Spends notes, emits a new note (UintNote) with any remaining change, enqueues a public call, and returns a partial note
-/// @param from The address of the sender
-/// @param to The address of the recipient
+/// @notice Transfer tokens from private balance to public balance, with a refund commitment for `from`
+/// @dev The commitment is owned by `from` and completable only by `msg_sender`. See Refunds above.
+/// @param from The address of the sender, and the owner of the commitment
+/// @param to The address of the recipient of the public balance
 /// @param amount The amount of tokens to transfer
 /// @param nonce The nonce used for authwit
-/// @return commitment The partial note utilized for the transfer commitment (privacy entrance)
+/// @return commitment The refund commitment owned by `from`
 #[private]
 fn transfer_private_to_public_with_commitment(
     from: AztecAddress,
@@ -293,10 +312,11 @@ fn transfer_private_to_private(
 
 ### transfer_private_to_commitment
 ```rust
-/// @notice Transfer tokens from private balance to the recipient commitment (recipient must create a commitment first)
-/// @dev Spends notes, emits a new note (UintNote) with any remaining change, and enqueues a public call
+/// @notice Transfer tokens from private balance to a commitment, completing it in private
+/// @dev `msg_sender` must be the commitment's completer, and the commitment must come from an earlier block.
+///      The amount is published.
 /// @param from The address of the sender
-/// @param commitment The Field representing the commitment (privacy entrance that the recipient shares with the sender)
+/// @param commitment The commitment to complete
 /// @param amount The amount of tokens to transfer
 /// @param nonce The nonce used for authwit
 #[private]
@@ -327,11 +347,11 @@ fn transfer_public_to_private(
 
 ### initialize_transfer_commitment
 ```rust
-/// @notice Initializes a transfer commitment to be used for transfers/mints
-/// @dev Returns a partial note that can be used to execute transfers/mints
-/// @param to The address of the recipient
-/// @param completer The address used to compute the validity commitment
-/// @return commitment The partial note initialized for the transfer/mint commitment
+/// @notice Creates a commitment owned by `to` that only `completer` can complete
+/// @dev See Commitments above.
+/// @param to The owner of the commitment
+/// @param completer The only address allowed to complete the commitment
+/// @return commitment The commitment
 #[private]
 fn initialize_transfer_commitment(to: AztecAddress, completer: AztecAddress) -> Field { /* ... */ }
 ```

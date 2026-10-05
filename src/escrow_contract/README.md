@@ -12,7 +12,8 @@ The Escrow contract is a minimally designed private contract with the following 
 - Needs to be setup with keys. This allows the Escrow to hold private balances.
 - Does not need to be publicly deployed.
 - Has only two methods - `withdraw()` and `withdraw_nft()` - that allows the owner of the Escrow to spend private balances of AIP-20 compliant tokens or of the NFT contract in this repository, respectively. The keys are needed for these.
-- Is fully private. Tokens and NFTs can only be withdrawn from the Escrow to another private balance, which does not leak any information.
+- Is fully private. Tokens and NFTs can only be withdrawn from the Escrow to another private balance, which does not leak any information. Anything sent to the Escrow publicly (a public balance, or an NFT publicly owned by it) can never be withdrawn.
+- Its secret key is a read capability, not a spend one: whoever holds it can register the Escrow in a PXE and see every note it receives and spends, but only the Logic contract can move funds. Generate it uniformly at random; a guessable secret exposes the Escrow to anyone who guesses it.
 - Only the owner can interact with the Escrow.
 - Does not have storage nor needs initialization. The owner of the Escrow is defined as an `AztecAddress` encoded into the contract instance salt, which means that its immutable and the Escrow address is determined by it.
 
@@ -55,7 +56,7 @@ Usually, a Logic contract will have the following features:
 
 ## Library Functions
 
-The library functions guarantee that escrow's keys, contract class ID and setup are correct while standardizing the correct private sharing of keys and escrow address to participants. 
+The library functions derive the escrow's keys and address and standardize how they are shared with participants. They do not validate their inputs: the Logic contract must pin the escrow contract class ID itself, and `_share_escrow` delivers whatever `(escrow, secret_key)` pair it is given. A Logic contract should check `escrow == _get_escrow(context, escrow_class_id, secret_key)` before sharing, and recipients should recompute the address from the secret before trusting it.
 
 > ⚠️ **WARNING — Private Balance Loss**
 >

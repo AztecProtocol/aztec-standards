@@ -31,8 +31,8 @@ arc403_multitoken_interface = { git = "https://github.com/AztecProtocol/aztec-st
 
 ```rust
 use arc403_interface::Arc403Authorizer;
-// e.g. from a contract that needs to call an authorizer:
-Arc403Authorizer::at(auth_contract).authorize_public(from, amount, selector);
+// e.g. from a public function that needs to call an authorizer (the call reverts if the hook does):
+self.call(Arc403Authorizer::at(auth_contract).authorize_public(from, amount, selector));
 ```
 
 Test doubles used by this repository's own suites live in `src/token_contract/src/test/test_authorization_contract` and `src/multitoken_contract/src/test/multitoken_authorization_contract`; they are spy implementations of this interface.

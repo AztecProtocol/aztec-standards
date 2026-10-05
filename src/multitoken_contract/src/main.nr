@@ -138,12 +138,13 @@ pub contract MultiToken {
         self.enqueue_self.increase_public_balance_internal(to, id, amount);
     }
 
-    /// @notice Transfer tokens from a private balance to the recipient commitment, which must already be initialized
-    /// @dev Spends notes, emits a new note with any remaining change, and completes the commitment with `(id, amount)`.
-    ///      The `from` payer must be the completer of the partial note.
+    /// @notice Transfer tokens from a private balance to a commitment, completing it in private
+    /// @dev Spends notes, returns any change to `from`, and completes the commitment with `(id, amount)`. `msg_sender`
+    ///      must be the commitment's completer (the caller, which is not `from` under an authwit), and the commitment
+    ///      must come from an earlier block. The id and amount are published.
     /// @param from The address of the sender
     /// @param id The token id to transfer
-    /// @param commitment The partial note representing the commitment (privacy entrance)
+    /// @param commitment The commitment to complete
     /// @param amount The amount of tokens to transfer
     /// @param _nonce The nonce used for authwitness
     #[authorize_once("from", "_nonce")]
@@ -192,11 +193,13 @@ pub contract MultiToken {
         self.internal._increase_private_balance(to, id, amount);
     }
 
-    /// @notice Initializes a transfer commitment to be used for transfers/mints
-    /// @dev id-agnostic: the completer binds the token id and amount at completion. Spends nothing, so no authwit.
-    /// @param to The address of the recipient
-    /// @param completer The address allowed to complete the partial note
-    /// @return commitment The partial note initialized for the transfer/mint commitment (privacy entrance)
+    /// @notice Creates a commitment owned by `to` that only `completer` can complete
+    /// @dev id-agnostic: the completer, as `msg_sender` of the completing call, chooses the token id and amount. `to`
+    ///      discovers it through an unconstrained message, so `to` (or a contract acting for it) should call this.
+    ///      Complete it at most once (see README). Spends nothing, so no authwit.
+    /// @param to The owner of the commitment
+    /// @param completer The only address allowed to complete the commitment
+    /// @return commitment The commitment
     #[external("private")]
     fn initialize_transfer_commitment(to: AztecAddress, completer: AztecAddress) -> Field {
         let commitment = self.internal._initialize_transfer_commitment(to, completer);
@@ -244,11 +247,11 @@ pub contract MultiToken {
     }
 
     /// @notice Finalizes a transfer of `amount` of `id` from public balance of `from` to a commitment
-    /// @dev The transfer must be prepared by calling `initialize_transfer_commitment` first. The `from` payer
-    ///      (msg_sender) must be the completer of the partial note.
+    /// @dev The transfer must be prepared by calling `initialize_transfer_commitment` first. `msg_sender` must be the
+    ///      commitment's completer: the caller, which is not `from` under an authwit.
     /// @param from The address of the sender
     /// @param id The token id to transfer
-    /// @param commitment The partial note representing the commitment (privacy entrance)
+    /// @param commitment The commitment to complete
     /// @param amount The amount of tokens to transfer
     /// @param _nonce The nonce used for authwitness
     #[authorize_once("from", "_nonce")]
@@ -393,7 +396,7 @@ pub contract MultiToken {
     /// @notice Finalizes a mint of `amount` of `id` to a commitment
     /// @dev Asserts that the caller is the minter; the minter (msg_sender) is the completer
     /// @param id The token id to mint
-    /// @param commitment The partial note representing the mint commitment (privacy entrance)
+    /// @param commitment The commitment to complete
     /// @param amount The amount of tokens to mint
     #[external("public")]
     fn mint_to_commitment(id: Field, commitment: Field, amount: u128) {
@@ -604,10 +607,10 @@ pub contract MultiToken {
         );
     }
 
-    /// @notice Initializes a transfer commitment to be used for transfers/mints
-    /// @param to The address of the recipient
-    /// @param completer The address used to compute the validity commitment
-    /// @return The partial note that can be used to execute the transfer/mint
+    /// @notice Initializes a transfer commitment
+    /// @param to The owner of the commitment
+    /// @param completer The only address allowed to complete the commitment
+    /// @return The commitment
     #[internal("private")]
     fn _initialize_transfer_commitment(
         to: AztecAddress,
