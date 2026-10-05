@@ -14,8 +14,7 @@ unconstrained fn nft_initialize_transfer_commitment_success() {
         NFT::at(nft_contract_address).initialize_transfer_commitment(recipient, owner),
     );
 
-    // Verify commitment is stored
-    utils::check_commitment_is_stored(env, nft_contract_address, commitment);
+    utils::check_commitment_completer(env, nft_contract_address, commitment, owner);
 }
 
 #[test]
@@ -31,8 +30,7 @@ unconstrained fn nft_initialize_transfer_commitment_by_recipient_success() {
         NFT::at(nft_contract_address).initialize_transfer_commitment(recipient, recipient),
     );
 
-    // Verify commitment is stored
-    utils::check_commitment_is_stored(env, nft_contract_address, commitment);
+    utils::check_commitment_completer(env, nft_contract_address, commitment, recipient);
 }
 
 #[test]
@@ -48,8 +46,7 @@ unconstrained fn nft_initialize_transfer_commitment_self_success() {
         NFT::at(nft_contract_address).initialize_transfer_commitment(owner, owner),
     );
 
-    // Verify commitment is stored
-    utils::check_commitment_is_stored(env, nft_contract_address, commitment);
+    utils::check_commitment_completer(env, nft_contract_address, commitment, owner);
 }
 
 #[test]
@@ -65,6 +62,5 @@ unconstrained fn nft_initialize_transfer_commitment_by_third_party_success() {
         NFT::at(nft_contract_address).initialize_transfer_commitment(recipient, minter),
     );
 
-    // Verify commitment is stored
-    utils::check_commitment_is_stored(env, nft_contract_address, commitment);
+    utils::check_commitment_completer(env, nft_contract_address, commitment, minter);
 }

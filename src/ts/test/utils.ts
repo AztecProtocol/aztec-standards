@@ -670,6 +670,19 @@ async function getAllPublicEvents<T>(
 }
 
 /**
+ * Returns every public log (events and raw logs alike) that `contractAddress` emitted in a transaction.
+ *
+ * @param txHash - The transaction hash to read the effect of.
+ * @param contractAddress - The contract whose logs to keep.
+ * @returns The contract's public logs, in emission order.
+ */
+export async function getPublicLogsOf(txHash: TxHash, contractAddress: AztecAddress) {
+  const effect = await node.getTxEffect(txHash);
+  if (!effect) throw new Error(`No tx effect for ${txHash}`);
+  return effect.data.publicLogs.filter((log) => log.contractAddress.equals(contractAddress));
+}
+
+/**
  * Queries the node for public Transfer events emitted in a transaction by a specific contract.
  *
  * @param txHash - The transaction hash to query events for.

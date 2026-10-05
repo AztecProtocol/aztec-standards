@@ -1,5 +1,5 @@
 use aztec::{
-    context::{PrivateContext, PublicContext},
+    context::{NullifierExistenceRequest, PrivateContext, PublicContext},
     keys::getters::{get_nhk_app, get_public_keys, try_get_public_keys},
     macros::notes::custom_note,
     messages::{
@@ -15,13 +15,13 @@ use aztec::{
     protocol::{
         address::AztecAddress,
         constants::DOM_SEP__PARTIAL_NOTE_VALIDITY_COMMITMENT,
-        hash::{compute_log_tag, poseidon2_hash_with_separator},
+        hash::{compute_log_tag, compute_siloed_nullifier, poseidon2_hash_with_separator},
         traits::{Deserialize, Hash, Packable, Serialize, ToField},
     },
 };
 
-// NFTNote supports partial notes, i.e. the ability to create an incomplete note in private, hiding certain values (the
-// owner, storage slot and randomness), and then completing the note in public with the ones missing (the token id).
+// NFTNote supports partial notes, i.e. the ability to create an incomplete note in private, hiding the owner and
+// randomness, and then completing it, in public or private, with the storage slot and token id, which become public.
 // Partial notes are being actively developed and are not currently fully supported via macros, and so we rely on the
 // #[custom_note] macro to implement it manually, resulting in some boilerplate. This is expected to be unnecessary once
 // macro support is expanded.
@@ -86,16 +86,17 @@ impl NoteHash for NFTNote {
 }
 
 impl NFTNote {
-    /// Creates a partial note that will hide the owner and storage slot but not the token id, since the note will be
-    /// later completed in public. This is a powerful technique for scenarios in which the token id cannot be known in
+    /// Creates a partial note that will hide the owner but not the storage slot or token id, which are published when
+    /// the note is completed. This is a powerful technique for scenarios in which the token id cannot be known in
     /// private (e.g. because it depends on some public state, such as a DEX).
     ///
     /// This function inserts a partial note validity commitment into the nullifier tree to be later on able to verify
     /// that the partial note and completer are legitimate. See function docs of `compute_validity_commitment` for more
     /// details.
     ///
-    /// Each partial note should only be used once, since otherwise multiple notes would be linked together and known to
-    /// belong to the same owner.
+    /// Each partial note should be completed at most once. Nothing enforces it, but the owner's wallet processes only
+    /// the first completion log it finds, so reuse can leave a later token undiscovered (and links the completions to
+    /// the same owner).
     ///
     /// As part of the partial note creation process, a log will be sent to `recipient` from `sender` so that they can
     /// discover the note. `recipient` will typically be the same as `owner`.
@@ -170,10 +171,9 @@ impl NoteType for NFTPartialNotePrivateLogContent {
 }
 
 /// A partial instance of a NFTNote. This value represents a private commitment to the owner and randomness (the storage
-/// slot is folded into the completed note hash, not the commitment), but the token id field has not yet been set. A
-/// partial note can be completed in public with the `complete`
-/// function (revealing the token id to the public), resulting in a NFTNote that can be used like any other one (except
-/// of course that its token id is known).
+/// slot is folded into the completed note hash, not the commitment), but the token id field has not yet been set. It
+/// can be completed with `complete` (public) or `complete_from_private`, both revealing the token id, resulting in a
+/// NFTNote that can be used like any other one (except of course that its token id is known).
 #[derive(Packable, Serialize, Deserialize)]
 pub struct PartialNFTNote {
     pub commitment: Field,
@@ -181,6 +181,10 @@ pub struct PartialNFTNote {
 
 impl PartialNFTNote {
     /// Completes the partial note, creating a new note that can be used like any other NFTNote.
+    ///
+    /// The validity commitment only proves that this contract created this exact partial note designating `completer`.
+    /// `storage_slot` and `token_id` are not bound by it, and nothing checks that `completer` is the caller: contracts
+    /// must pass the right slot and authenticate the caller themselves, typically by passing `msg_sender()`.
     pub fn complete(
         self,
         context: PublicContext,
@@ -195,8 +199,7 @@ impl PartialNFTNote {
         // TODO(#11636): remove this
         assert(token_id != 0, "Cannot complete a PartialNFTNote with a value of 0");
 
-        // We verify that the partial note we're completing is valid (i.e. completer is correct, it uses the correct
-        // state variable's storage slot, and it is internally consistent).
+        // We verify that `completer` matches the completer designated when this contract created this partial note.
         let validity_commitment = self.compute_validity_commitment(completer);
         // Safety: we're using the existence of the nullifier as proof of the contract having validated the partial
         // note's preimage, which is safe.
@@ -216,11 +219,32 @@ impl PartialNFTNote {
         context.push_note_hash(self.compute_complete_note_hash(storage_slot, token_id));
     }
 
-    /// Computes a validity commitment for this partial note. The commitment cryptographically binds the note's private
-    /// data with the designated completer address. When the note is later completed in public execution, we can load
-    /// this commitment from the nullifier tree and verify that both the partial note (e.g. that the storage slot
-    /// corresponds to the correct owner, and that we're using the correct state variable) and completer are
-    /// legitimate.
+    /// Completes the partial note from private execution, requiring a settled validity commitment for the designated
+    /// completer: the partial note cannot be created in the same transaction. The token id is still published, through
+    /// an unencrypted log on the private-log channel.
+    pub fn complete_from_private(
+        self,
+        context: &mut PrivateContext,
+        completer: AztecAddress,
+        storage_slot: Field,
+        token_id: Field,
+    ) {
+        let validity_commitment = self.compute_validity_commitment(completer);
+        let siloed_validity_commitment =
+            compute_siloed_nullifier(context.this_address(), validity_commitment);
+        context.assert_nullifier_exists(NullifierExistenceRequest::for_settled(
+            siloed_validity_commitment,
+        ));
+
+        let log_tag = compute_log_tag(self.commitment, DOM_SEP__NOTE_COMPLETION_LOG_TAG);
+        let payload = BoundedVec::from_array([storage_slot, token_id]);
+        context.emit_private_log_unsafe(log_tag, payload);
+        context.push_note_hash(self.compute_complete_note_hash(storage_slot, token_id));
+    }
+
+    /// Computes a validity commitment for this partial note. It binds the note's private content to the designated
+    /// completer; completion looks it up in the nullifier tree to verify that this contract created this exact partial
+    /// note designating that completer.
     pub fn compute_validity_commitment(self, completer: AztecAddress) -> Field {
         poseidon2_hash_with_separator(
             [self.commitment, completer.to_field()],

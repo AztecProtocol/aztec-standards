@@ -5,6 +5,7 @@ import {
   assertOwnsPublicNFT,
   initializeTransferCommitmentNFT,
   expectNFTTransferEvents,
+  getPublicLogsOf,
   PRIVATE_ADDRESS,
 } from './utils.js';
 
@@ -110,6 +111,8 @@ describe('NFT', () => {
 
       // transfer_private_to_commitment: (no public events)
       await expectNFTTransferEvents(commitmentTx.txHash, nft.address, []);
+      // Completed in private: no public log at all, so neither the sender nor a public completion is revealed.
+      expect(await getPublicLogsOf(commitmentTx.txHash, nft.address)).toHaveLength(0);
 
       // Verify alice no longer owns the NFT
       await assertOwnsPrivateNFT(nft, tokenId, alice, false);
