@@ -42,9 +42,8 @@ unconstrained fn secret_key_to_public_keys_success() {
     assert_eq(vector_public_keys_2, public_keys_2);
 }
 
-// Note that this test will fail since we use a different secret key to produce different public keys than expected
-#[test(should_fail)]
-unconstrained fn secret_key_to_public_keys_fail() {
+#[test]
+unconstrained fn secret_key_to_public_keys_differ_for_other_secret() {
     let mut env = TestEnvironment::new();
 
     let logic_contract_address = logic_utils::deploy_logic(&mut env, 1);
@@ -60,5 +59,5 @@ unconstrained fn secret_key_to_public_keys_fail() {
         TestLogic::at(logic_contract_address).secret_key_to_public_keys(modified_secret_key),
     );
 
-    assert_eq(vector_public_keys_1, public_keys_1);
+    assert(vector_public_keys_1 != public_keys_1, "a different secret must derive different keys");
 }

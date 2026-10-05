@@ -1,5 +1,6 @@
 use crate::Escrow;
 use crate::test::utils as escrow_utils;
+use aztec::protocol::{abis::function_selector::FunctionSelector, traits::ToField};
 use aztec::test::helpers::test_environment::CallPrivateOptions;
 use token::{test::utils as token_utils, Token};
 
@@ -94,5 +95,43 @@ unconstrained fn escrow_withdraw_unauthorized() {
     env.call_private(
         owner,
         Escrow::at(escrow_contract_address).withdraw(token_contract_address, amount, recipient),
+    );
+}
+
+/// The secret is a read capability, not a spend one: Token's authwit check calls the escrow's
+/// `verify_private_authwit(Field)` (selector 0xc7784917), which the escrow does not have, so a direct spend fails.
+#[test(should_fail_with = "Function with selector 0xc7784917 not found in the registered artifact")]
+unconstrained fn escrow_secret_holder_cannot_spend() {
+    let escrow_secret: Field = 123456;
+    let (mut env, escrow_contract_address, token_contract_address, _, _, attacker, minter, _) =
+        escrow_utils::set_escrow_with_token_and_nft(false, escrow_secret);
+
+    assert_eq(
+        comptime { FunctionSelector::from_signature("verify_private_authwit(Field)") }.to_field(),
+        0xc7784917,
+    );
+
+    let amount: u128 = token_utils::mint_amount;
+    env.call_private(
+        minter,
+        Token::at(token_contract_address).mint_to_private(escrow_contract_address, amount),
+    );
+
+    // TXE registered the escrow's keys from its secret, so with the escrow in scope the attacker can read its notes.
+    token_utils::check_private_balance(
+        env,
+        token_contract_address,
+        escrow_contract_address,
+        amount,
+    );
+    env.call_private_opts(
+        attacker,
+        CallPrivateOptions::new().with_additional_scopes([escrow_contract_address]),
+        Token::at(token_contract_address).transfer_private_to_private(
+            escrow_contract_address,
+            attacker,
+            amount,
+            0,
+        ),
     );
 }

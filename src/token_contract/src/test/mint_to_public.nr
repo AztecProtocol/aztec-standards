@@ -44,21 +44,16 @@ unconstrained fn mint_to_public_failure_recipient_balance_overflow() {
     env.call_public(minter, Token::at(token_contract_address).mint_to_public(recipient, 1 as u128));
 }
 
-#[test(should_fail_with = "Contract execution has reverted: Assertion failed: attempt to add with overflow 'self.storage.public_balances.at(to).read() + amount'")]
+#[test(should_fail_with = "Contract execution has reverted: Assertion failed: attempt to add with overflow 'self.storage.total_supply.read() + amount'")]
 unconstrained fn mint_to_public_failure_overflow_total_supply() {
-    // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
-    let (mut env, token_contract_address, owner, _, minter) = utils::setup_with_minter(false);
+    let (mut env, token_contract_address, owner, recipient, minter) =
+        utils::setup_with_minter(false);
 
-    let max_u128 = utils::max_u128();
-    let mint_to_public_call_interface =
-        Token::at(token_contract_address).mint_to_public(owner, max_u128);
+    env.call_public(
+        minter,
+        Token::at(token_contract_address).mint_to_public(owner, utils::max_u128()),
+    );
 
-    env.call_public(minter, mint_to_public_call_interface);
-    utils::check_public_balance(env, token_contract_address, owner, max_u128);
-
-    let total_supply = env.view_public(Token::at(token_contract_address).total_supply());
-    assert(total_supply == max_u128);
-
-    // Overflow total supply
-    env.call_public(minter, Token::at(token_contract_address).mint_to_public(owner, 1 as u128));
+    // A different recipient, so the supply overflows before any balance could.
+    env.call_public(minter, Token::at(token_contract_address).mint_to_public(recipient, 1 as u128));
 }
