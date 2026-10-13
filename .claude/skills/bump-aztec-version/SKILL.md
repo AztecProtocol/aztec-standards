@@ -127,6 +127,12 @@ When everything is green: commit, open a PR to `main`, let CI pass, merge. Then 
 ---
 
 ## Gotchas (bump-time — check these first)
+- **The migration notes are not the diff.** 6.0.0-rc.3's notes omit that `txe_oracles::deploy` and
+  `ContractDeployment` gained an `immutables_hash`, which the vault and escrow tests pass directly (0 is the
+  `DeployOptions` default and what escrow's address derivation assumes), and they list a `Writer::advance_offset`
+  removal the pinned protocol crates do not contain. Diff aztec-nr's `aztec/src` and the protocol crates between
+  the old and target tags (nargo caches both under `~/nargo/github.com/<org>/<repo>/<tag>`) against what
+  `src/**/*.nr` uses: a compile catches changed signatures, not changed behaviour.
 - **Toolchain mismatch.** The default local `aztec`/`nargo` is often an older version that can't parse
   the target's aztec-nr. Always install the target version (isolated, per Step 3).
 - **Worktrees inside the main checkout build the main checkout.** nargo roots itself at the *topmost*
