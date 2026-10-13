@@ -24,8 +24,8 @@ already merged to `main` (see the `bump-aztec-version` skill).
 
 - Fork workflows enabled; npm Trusted Publishing configured for the package with organization
   `AztecProtocol`, repository `aztec-standards`, workflow `release.yml`, environment `Production`,
-  and `npm publish` allowed; workflows on an available runner (standard `ubuntu-latest`); `v*`
-  tag-push rights; a `Production` reviewer available to approve the deployment.
+  and `npm publish` allowed; workflows on an available runner (the standard hosted `ubuntu-24.04`);
+  `v*` tag-push rights; a `Production` reviewer available to approve the deployment.
 - The environment pin is load-bearing on both sides. npm allows one trusted publisher per package with
   one optional environment claim, and GitHub only stamps that claim when the job declares an
   environment — so `release.yml` must keep `environment: Production` on every path. A job running in
@@ -73,7 +73,9 @@ SHA=$(git rev-parse HEAD)  # Step 4 tags exactly this commit
 echo "releasing v$TARGET ($SHA) → dist-tag '$DIST' via '$ENVIRONMENT'"
 [ "$(node -p "require('./package.json').version")" = "$TARGET" ] || { echo "ABORT: root package.json != $TARGET (bump didn't land — wrong dir / edited export/?)"; exit 1; }
 git diff --quiet HEAD -- package.json || { echo "ABORT: bump uncommitted — the tag must point at the committed bump"; exit 1; }
-grep -q "runs-on: ubuntu-latest$" .github/workflows/release.yml || echo "WARN: release.yml runner may be wrong (rebase onto main?)"
+# Every release.yml job runs on the pinned hosted image. Another label means this branch's release.yml is not main's,
+# and one no runner serves (the larger `ubuntu-latest-m` the shared workflows default to) leaves the jobs queued.
+if grep -nE '^ +runs-on:' .github/workflows/release.yml | grep -v 'runs-on: ubuntu-24\.04$'; then echo "WARN: the release.yml jobs above are not on ubuntu-24.04 (rebase onto main?)"; fi
 grep -q "^    environment: Production$" .github/workflows/release.yml || { echo "ABORT: release.yml does not pin environment: Production — the npm trusted publisher will reject the OIDC token"; exit 1; }
 [ "$(gh api "repos/AztecProtocol/aztec-standards/commits/$SHA" --jq .commit.verification.verified)" = true ] || { echo "ABORT: GitHub shows no verified signature on $SHA (unsigned, rebase-merged, or not pushed); see Gotchas"; exit 1; }
 ```
@@ -148,8 +150,9 @@ tarball before the approval, and it rehearses locally: `yarn build`, `npm pack -
   when the stable `X.Y.Z` publishes; you can't `dist-tag rm latest` (a package must have one). Don't
   announce the package until the stable is out.
 - **Runners + fork state.** A GitHub fork has workflows disabled by default (enable in the Actions tab).
-  Target `ubuntu-latest`; don't assume custom/larger-runner labels (e.g. `ubuntu-latest-m`) exist — jobs
-  stuck `queued` are the symptom.
+  Every job runs on the hosted `ubuntu-24.04` image, pinned because the floating `ubuntu-latest` moves to
+  Ubuntu 26.04 from 2026-10-19 and that move should be one reviewed change across every workflow. Don't
+  assume custom/larger-runner labels (e.g. `ubuntu-latest-m`) exist — jobs stuck `queued` are the symptom.
 - **One environment, pinned on both sides.** Every tag publishes through `Production`; the npm trusted
   publisher pins the same environment. Changing one without the other breaks publishing: loosen npm and
   you drop the gate, loosen `release.yml` and npm rejects the token. A prerelease waiting for Production
@@ -187,10 +190,11 @@ tarball before the approval, and it rehearses locally: `yarn build`, `npm pack -
 - **`E404` on `PUT` means unauthorized, not missing.** npm answers an unauthenticated or unrecognised
   publish with `404 Not Found - PUT …/@aztec-foundation%2faztec-standards`. Do not read it as a registry
   or version problem. Check, in order: is a trusted publisher configured for the package at all; does its
-  environment match the job's; did `setup-node` leave `NODE_AUTH_TOKEN` as the literal
-  `XXXXX-XXXXX-XXXXX-XXXXX` placeholder with no OIDC exchange line in the log (the tell that npm fell
-  back to anonymous). Nothing is published when this fires, so the tag is safe to reuse after the fix —
-  re-run the failed job rather than churning the tag.
+  environment match the job's; did the publish output reach the error with no `Signed provenance
+  statement` line (the tell that the OIDC exchange failed: npm turns provenance on only after it succeeds,
+  and otherwise sends the `${NODE_AUTH_TOKEN}` that `setup-node` writes into `.npmrc` and nothing sets).
+  Nothing is published when this fires, so the tag is safe to reuse after the fix — re-run the failed job
+  rather than churning the tag.
 - **Reruns cannot repair dist-tags.** npm OIDC authenticates `npm publish`, not `npm dist-tag add`. A
   rerun skips an already-published version only when its expected dist-tag is already correct (and the
   bytes match, above); otherwise the workflow fails with instructions to repair the tag using an authorized
