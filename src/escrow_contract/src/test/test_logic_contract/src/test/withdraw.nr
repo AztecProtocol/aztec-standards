@@ -5,7 +5,7 @@ use escrow_contract::test::utils as escrow_utils;
 use token::{test::utils as token_utils, Token};
 
 #[test]
-unconstrained fn withdraw_success() {
+unconstrained fn withdraw() {
     let (mut env, token, _owner, recipient, minter) = token_utils::setup_with_minter(false);
 
     let escrow_class_id = escrow_utils::get_escrow_class_id();
@@ -31,7 +31,7 @@ unconstrained fn withdraw_success() {
 }
 
 #[test(should_fail_with = "Not Authorized")]
-unconstrained fn withdraw_unauthorized() {
+unconstrained fn withdraw_failure_unauthorized() {
     let (mut env, escrow, token, _, _, recipient, minter, _) =
         escrow_utils::set_escrow_with_token_and_nft(false, 1);
 

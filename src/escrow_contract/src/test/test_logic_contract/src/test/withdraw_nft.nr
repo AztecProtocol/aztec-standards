@@ -5,7 +5,7 @@ use escrow_contract::test::utils as escrow_utils;
 use nft::{NFT, test::utils as nft_utils};
 
 #[test]
-unconstrained fn withdraw_nft_success() {
+unconstrained fn withdraw_nft() {
     let mut env = TestEnvironment::new();
     let owner = env.create_light_account();
     let recipient = env.create_light_account();
@@ -36,7 +36,7 @@ unconstrained fn withdraw_nft_success() {
 }
 
 #[test(should_fail_with = "Not Authorized")]
-unconstrained fn withdraw_unauthorized() {
+unconstrained fn withdraw_nft_failure_unauthorized() {
     let (mut env, escrow, _, nft, _, recipient, minter, _) =
         escrow_utils::set_escrow_with_token_and_nft(false, 1);
 

@@ -4,7 +4,7 @@ use aztec::test::helpers::test_environment::TestEnvironment;
 use escrow_contract::test::utils as escrow_utils;
 
 #[test]
-unconstrained fn share_escrow_success() {
+unconstrained fn share_escrow() {
     let mut env = TestEnvironment::new();
 
     let recipient = env.create_light_account();

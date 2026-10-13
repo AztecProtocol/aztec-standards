@@ -4,7 +4,7 @@ use aztec::test::helpers::test_environment::TestEnvironment;
 
 // We test public key derivation using two different secret keys.
 #[test]
-unconstrained fn secret_key_to_public_keys_success() {
+unconstrained fn secret_key_to_public_keys() {
     let mut env = TestEnvironment::new();
 
     let logic_contract_address = logic_utils::deploy_logic(&mut env, 1);
