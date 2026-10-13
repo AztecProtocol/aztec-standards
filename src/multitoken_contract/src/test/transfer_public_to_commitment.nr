@@ -4,7 +4,7 @@ use aztec::oracle::random::random;
 use aztec::test::helpers::authwit as authwit_cheatcodes;
 
 #[test]
-unconstrained fn transfer_public_to_commitment_success() {
+unconstrained fn transfer_public_to_commitment() {
     // Initialize a commitment (completer = owner), then move from the owner's PUBLIC
     // balance into it. Owner's public balance debits; recipient's PRIVATE balance credits.
     let (env, multitoken_contract_address, owner, recipient, _) =

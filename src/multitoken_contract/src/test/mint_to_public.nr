@@ -2,7 +2,7 @@ use crate::MultiToken;
 use crate::test::utils::{self, mint_amount};
 
 #[test]
-unconstrained fn mint_to_public_success() {
+unconstrained fn mint_to_public() {
     // Minter mints (id, amount) to public; recipient's public balance of id equals amount.
     let (env, multitoken_contract_address, owner, _, minter) = utils::setup_with_minter(false);
 

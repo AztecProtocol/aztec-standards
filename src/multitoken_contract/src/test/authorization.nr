@@ -4,7 +4,7 @@ use aztec::protocol::traits::ToField;
 use multitoken_authorization_contract::MultiTokenAuthorizationContract;
 
 #[test]
-unconstrained fn auth_hook_called_on_transfer_public_to_public() {
+unconstrained fn authorization_hook_called_on_transfer_public_to_public() {
     // public-context fn -> authorize_public -> from_public = true
     let (env, multitoken_contract_address, owner, recipient, minter, auth_contract) =
         utils::setup_with_auth_contract_and_minter(false);
@@ -39,7 +39,7 @@ unconstrained fn auth_hook_called_on_transfer_public_to_public() {
 }
 
 #[test]
-unconstrained fn auth_hook_called_on_burn_public() {
+unconstrained fn authorization_hook_called_on_burn_public() {
     // public-context fn -> authorize_public -> from_public = true
     let (env, multitoken_contract_address, owner, _, minter, auth_contract) =
         utils::setup_with_auth_contract_and_minter(false);
@@ -69,7 +69,7 @@ unconstrained fn auth_hook_called_on_burn_public() {
 }
 
 #[test]
-unconstrained fn auth_hook_called_on_transfer_public_to_commitment() {
+unconstrained fn authorization_hook_called_on_transfer_public_to_commitment() {
     // public-context fn -> authorize_public -> from_public = true
     let (env, multitoken_contract_address, owner, recipient, minter, auth_contract) =
         utils::setup_with_auth_contract_and_minter(false);
@@ -110,7 +110,7 @@ unconstrained fn auth_hook_called_on_transfer_public_to_commitment() {
 }
 
 #[test]
-unconstrained fn auth_hook_called_on_transfer_private_to_private() {
+unconstrained fn authorization_hook_called_on_transfer_private_to_private() {
     // private-context fn -> authorize_private -> from_public = false
     let (env, multitoken_contract_address, owner, recipient, _, auth_contract) =
         utils::setup_and_mint_to_private_with_auth(false, 1);
@@ -140,7 +140,7 @@ unconstrained fn auth_hook_called_on_transfer_private_to_private() {
 }
 
 #[test]
-unconstrained fn auth_hook_called_on_transfer_private_to_public() {
+unconstrained fn authorization_hook_called_on_transfer_private_to_public() {
     // private-context fn -> authorize_private -> from_public = false
     let (env, multitoken_contract_address, owner, recipient, _, auth_contract) =
         utils::setup_and_mint_to_private_with_auth(false, 1);
@@ -170,7 +170,7 @@ unconstrained fn auth_hook_called_on_transfer_private_to_public() {
 }
 
 #[test]
-unconstrained fn auth_hook_called_on_transfer_public_to_private() {
+unconstrained fn authorization_hook_called_on_transfer_public_to_private() {
     // ARC-403 caveat: transfer_public_to_private is a PRIVATE fn despite operating on the public balance, so it
     // dispatches to authorize_private -> from_public = false.
     let (env, multitoken_contract_address, owner, recipient, minter, auth_contract) =
@@ -206,7 +206,7 @@ unconstrained fn auth_hook_called_on_transfer_public_to_private() {
 }
 
 #[test]
-unconstrained fn auth_hook_called_on_transfer_private_to_commitment() {
+unconstrained fn authorization_hook_called_on_transfer_private_to_commitment() {
     // private-context fn -> authorize_private -> from_public = false
     let (env, multitoken_contract_address, owner, recipient, _, auth_contract) =
         utils::setup_and_mint_to_private_with_auth(false, 1);
@@ -242,7 +242,7 @@ unconstrained fn auth_hook_called_on_transfer_private_to_commitment() {
 }
 
 #[test]
-unconstrained fn auth_hook_called_on_burn_private() {
+unconstrained fn authorization_hook_called_on_burn_private() {
     // private-context fn -> authorize_private -> from_public = false
     let (env, multitoken_contract_address, owner, _, _, auth_contract) =
         utils::setup_and_mint_to_private_with_auth(false, 1);
@@ -267,7 +267,7 @@ unconstrained fn auth_hook_called_on_burn_private() {
 }
 
 #[test]
-unconstrained fn auth_hook_records_correct_id() {
+unconstrained fn authorization_hook_records_correct_id() {
     // Focused id-integrity: move a distinctive id (42, distinct from the from address and amount) and assert the
     // hook recorded exactly that id (guards against the id arg being dropped or confused with amount/from).
     let (env, multitoken_contract_address, owner, recipient, minter, auth_contract) =
@@ -306,7 +306,7 @@ unconstrained fn auth_hook_records_correct_id() {
 // ARC-403 hook is NOT fired on mints: mints are minter-gated and never call the hook.
 
 #[test]
-unconstrained fn auth_hook_not_called_on_mint_to_public() {
+unconstrained fn authorization_hook_not_called_on_mint_to_public() {
     let (env, multitoken_contract_address, owner, _, minter, auth_contract) =
         utils::setup_with_auth_contract_and_minter(false);
 
@@ -320,7 +320,7 @@ unconstrained fn auth_hook_not_called_on_mint_to_public() {
 }
 
 #[test]
-unconstrained fn auth_hook_not_called_on_mint_to_private() {
+unconstrained fn authorization_hook_not_called_on_mint_to_private() {
     let (env, multitoken_contract_address, owner, _, minter, auth_contract) =
         utils::setup_with_auth_contract_and_minter(false);
 
@@ -338,7 +338,7 @@ unconstrained fn auth_hook_not_called_on_mint_to_private() {
 }
 
 #[test]
-unconstrained fn auth_hook_not_called_on_mint_to_commitment() {
+unconstrained fn authorization_hook_not_called_on_mint_to_commitment() {
     let (env, multitoken_contract_address, _, recipient, minter, auth_contract) =
         utils::setup_with_auth_contract_and_minter(false);
 
@@ -363,7 +363,7 @@ unconstrained fn auth_hook_not_called_on_mint_to_commitment() {
 // ARC-403 hook rejection: the hook runs BEFORE balance mutation; set_should_revert -> "operation not authorized".
 
 #[test(should_fail_with = "operation not authorized")]
-unconstrained fn transfer_public_to_public_reverts_when_auth_rejects() {
+unconstrained fn authorization_failure_hook_rejects_transfer_public_to_public() {
     let (env, multitoken_contract_address, owner, recipient, minter, auth_contract) =
         utils::setup_with_auth_contract_and_minter(false);
 
@@ -393,7 +393,7 @@ unconstrained fn transfer_public_to_public_reverts_when_auth_rejects() {
 }
 
 #[test(should_fail_with = "operation not authorized")]
-unconstrained fn transfer_private_to_private_reverts_when_auth_rejects() {
+unconstrained fn authorization_failure_hook_rejects_transfer_private_to_private() {
     // The private hook enqueues record_call_internal to public, where the assert fires and propagates.
     let (env, multitoken_contract_address, owner, recipient, _, auth_contract) =
         utils::setup_and_mint_to_private_with_auth(false, 1);

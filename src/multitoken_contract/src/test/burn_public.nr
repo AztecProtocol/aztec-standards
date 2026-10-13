@@ -3,7 +3,7 @@ use crate::test::utils::{self, mint_amount};
 use aztec::test::helpers::authwit as authwit_cheatcodes;
 
 #[test]
-unconstrained fn burn_public_success() {
+unconstrained fn burn_public() {
     // Burn (id, amount); owner's public balance reduces. There is no total_supply.
     let (env, multitoken_contract_address, owner, _, _) =
         utils::setup_and_mint_to_public_with_minter(false, 1);

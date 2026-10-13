@@ -2,7 +2,7 @@ use crate::MultiToken;
 use crate::test::utils::{self, mint_amount};
 
 #[test]
-unconstrained fn mint_to_private_success() {
+unconstrained fn mint_to_private() {
     // Minter mints (id, amount); recipient's private balance of id equals amount.
     let (env, multitoken_contract_address, owner, _, minter) = utils::setup_with_minter(false);
 
@@ -16,7 +16,7 @@ unconstrained fn mint_to_private_success() {
 }
 
 #[test]
-unconstrained fn mint_to_private_id_zero_success() {
+unconstrained fn mint_to_private_id_zero() {
     // id = 0 is legal: this is a positive case, not a rejection.
     let (env, multitoken_contract_address, owner, _, minter) = utils::setup_with_minter(false);
 

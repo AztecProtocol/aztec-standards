@@ -331,7 +331,7 @@ unconstrained fn transfer_private_to_private_per_id_isolation() {
 }
 
 #[test(should_fail_with = "Balance too low")]
-unconstrained fn transfer_private_to_private_cannot_spend_another_id() {
+unconstrained fn transfer_private_to_private_failure_spend_another_id() {
     let (env, multitoken_contract_address, owner, recipient, minter) =
         utils::setup_with_minter(false);
 

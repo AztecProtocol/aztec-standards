@@ -3,7 +3,7 @@ use crate::test::utils::{self, mint_amount};
 use aztec::oracle::random::random;
 
 #[test]
-unconstrained fn mint_to_commitment_success() {
+unconstrained fn mint_to_commitment() {
     // Initialize a commitment with completer = minter (msg_sender at completion), then mint into it.
     let (env, multitoken_contract_address, _, recipient, minter) = utils::setup_with_minter(false);
 
@@ -57,7 +57,7 @@ unconstrained fn mint_to_commitment_failure_invalid_commitment() {
 }
 
 #[test]
-unconstrained fn mint_to_commitment_id_zero_success() {
+unconstrained fn mint_to_commitment_id_zero() {
     // The zero-guard is on `value` not `id`: completing with id = 0, amount > 0 succeeds.
     let (env, multitoken_contract_address, _, recipient, minter) = utils::setup_with_minter(false);
 
