@@ -5,7 +5,8 @@
 //! so the transaction reverts rather than wrapping). We compute the product and the division in a
 //! 256-bit intermediate (`noir-bignum`'s `U256` — three 120-bit limbs, modulus 2^256) so nothing
 //! overflows until the final result, which is narrowed back to `u128` and only fails if the true
-//! result genuinely exceeds `u128` — an impossibility for real balances.
+//! result exceeds `u128`. The callers' virtual-offset additions (`total_supply + vault_offset`,
+//! `total_assets + 1`) are still `u128` and can overflow before this helper runs.
 
 use bignum::bignum::BigNum;
 use bignum::U256;
@@ -127,10 +128,17 @@ mod test {
 
     #[test(should_fail_with = "conversion result exceeds u128")]
     fn result_exceeding_u128_reverts_cleanly() {
-        // max * max / 1 = (2^128-1)^2, which genuinely does not fit u128. Reverts with our message
-        // rather than a raw range-check failure. Unreachable for real balances (would require a
-        // denominator far below the operands), but proves the narrowing guard is present.
+        // max * max / 1 = (2^128-1)^2, which does not fit u128. Reverts with our message rather than
+        // a raw range-check failure. An oversized initial deposit with a large offset can reach it.
         let max: u128 = 0xffffffffffffffffffffffffffffffff;
         let _ = mul_div(max, max, 1, ROUND_DOWN);
+    }
+
+    #[test(should_fail_with = "conversion result exceeds u128")]
+    fn result_of_exactly_2_pow_128_reverts() {
+        // max * max / (max - 1) = 2^128 remainder 1. Limb 2 is zero, so only the `hi < 256` bound
+        // rejects it.
+        let max: u128 = 0xffffffffffffffffffffffffffffffff;
+        let _ = mul_div(max, max, max - 1, ROUND_DOWN);
     }
 }

@@ -114,7 +114,7 @@ pub contract Vault {
         let to = self.address;
 
         // Assets could be donated to the vault's precomputed address before deployment, but such assets are
-        // ignored at this point to ensure the asset<>share conversion is 1:1 for the initial deposit.
+        // ignored at this point so the initial deposit mints exactly `vault_offset` shares per asset.
         let total_assets: u128 = 0;
         let total_supply: u128 = 0;
         let vault_offset = self.storage.vault_offset.read();
