@@ -69,7 +69,6 @@ unconstrained fn nft_transfer_private_to_commitment_authorized_success() {
         NFT::at(nft_contract_address).initialize_transfer_commitment(recipient, proxy),
     );
 
-    // Create transfer call interface with non-zero nonce
     let transfer_call_interface = NFT::at(nft_contract_address).transfer_private_to_commitment(
         owner,
         token_id,

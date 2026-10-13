@@ -111,7 +111,7 @@ describe('NFT', () => {
 
       // transfer_private_to_commitment: (no public events)
       await expectNFTTransferEvents(commitmentTx.txHash, nft.address, []);
-      // Completed in private: no public log at all, so neither the sender nor a public completion is revealed.
+      // Completed in private: no public log. The old path completed through an enqueued public call, which emitted one.
       expect(await getPublicLogsOf(commitmentTx.txHash, nft.address)).toHaveLength(0);
 
       // Verify alice no longer owns the NFT

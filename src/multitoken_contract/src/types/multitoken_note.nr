@@ -104,8 +104,8 @@ impl MultiTokenNote {
     /// details.
     ///
     /// Each partial note should be completed at most once. Nothing enforces it, but the owner's wallet processes only
-    /// the first completion log it finds, so reuse can leave later payments undiscovered (and links the completions to
-    /// the same owner).
+    /// the first completion log it finds, so reuse can leave the other payments undiscovered (and links the
+    /// completions to the same owner).
     ///
     /// As part of the partial note creation process, a log will be sent to `recipient` so that they can discover the
     /// note. `recipient` will typically be the same as `owner`.
@@ -231,9 +231,9 @@ impl PartialMultiTokenNote {
         context.push_note_hash(self.compute_complete_note_hash(storage_slot, token_id, value));
     }
 
-    /// Completes the partial note, creating a new note that can be used like any other MultiTokenNote. Same as
-    /// `complete` but works from private context, requiring the validity commitment to have been created in a prior
-    /// settled transaction.
+    /// Completes the partial note from private execution, requiring a settled validity commitment for the designated
+    /// completer: the partial note cannot be created in the same transaction. Unlike `complete`, a zero value is
+    /// accepted. The id and value are still published, through an unencrypted log on the private-log channel.
     pub fn complete_from_private(
         self,
         context: &mut PrivateContext,

@@ -95,7 +95,7 @@ impl NFTNote {
     /// details.
     ///
     /// Each partial note should be completed at most once. Nothing enforces it, but the owner's wallet processes only
-    /// the first completion log it finds, so reuse can leave a later token undiscovered (and links the completions to
+    /// the first completion log it finds, so reuse can leave the other token undiscovered (and links the completions to
     /// the same owner).
     ///
     /// As part of the partial note creation process, a log will be sent to `recipient` from `sender` so that they can
@@ -221,7 +221,9 @@ impl PartialNFTNote {
 
     /// Completes the partial note from private execution, requiring a settled validity commitment for the designated
     /// completer: the partial note cannot be created in the same transaction. The token id is still published, through
-    /// an unencrypted log on the private-log channel.
+    /// an unencrypted log on the private-log channel. There is no `token_id != 0` guard: private logs keep their
+    /// length, so the trailing-zero problem behind the public guard does not apply, and the id comes from a note the
+    /// caller just spent.
     pub fn complete_from_private(
         self,
         context: &mut PrivateContext,

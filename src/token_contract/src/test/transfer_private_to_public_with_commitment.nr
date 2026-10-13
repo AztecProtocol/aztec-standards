@@ -92,7 +92,7 @@ unconstrained fn transfer_private_to_public_with_commitment_on_behalf_of_other()
     utils::check_public_balance(env, token_contract_address, recipient, transfer_amount);
 }
 
-/// The refund pattern as Labs' AMM and FPC use it: a contract pulls `amount` from the user's private balance into its
+/// The refund pattern as Labs' AMM uses it: a contract pulls `amount` from the user's private balance into its
 /// own public balance, then returns the unused part privately. The refund must land with `from`, not with `to`.
 #[test]
 unconstrained fn transfer_private_to_public_with_commitment_refunds_from() {

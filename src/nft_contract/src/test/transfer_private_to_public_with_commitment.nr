@@ -88,6 +88,7 @@ unconstrained fn nft_transfer_private_to_public_with_commitment_returns_to_from(
         ),
     );
     utils::assert_owns_public_nft(env, nft_contract_address, custodian, token_id);
+    utils::assert_private_nft_nullified(env, nft_contract_address, owner, token_id);
 
     // The custodian is `msg_sender` of the take, hence the only completer.
     let give_back = NFT::at(nft_contract_address).transfer_public_to_commitment(

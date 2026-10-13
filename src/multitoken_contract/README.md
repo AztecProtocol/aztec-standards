@@ -42,19 +42,19 @@ The rest of the commitment contract, shared with `Token`:
 
 - **Owner.** The commitment is owned by `to`, who learns about it through an unconstrained message, so `to`, or a contract acting for it, should create it.
 - **Completer.** The completer is checked against `msg_sender` of the completing call (`transfer_private_to_commitment`, `transfer_public_to_commitment`, `mint_to_commitment`). Under an authwit that is the caller, not `from`, so the commitment must name the caller.
-- **What is public.** Completing publishes the id and amount in a log tagged by the commitment, including from `transfer_private_to_commitment`, which emits it unencrypted through the private-log channel. The owner stays private.
-- **Timing.** `transfer_private_to_commitment` needs the commitment to come from an earlier block. Public completion also works in the transaction that created it.
-- **Complete at most once.** Nothing stops a second completion, and it is paid for again, but the owner's wallet processes only the first completion log it finds, so reuse can leave later payments undiscovered and the funds out of reach of normal wallet discovery. "Safe" above does not make reuse safe.
+- **What is public.** Completing publishes the storage slot, the id and the amount in a log tagged by the commitment, including from `transfer_private_to_commitment`, which emits it unencrypted through the private-log channel. The owner is never published, which is privacy from chain observers, not from the completer, and public completion also exposes the commitment and the completer, so anyone can recompute the validity nullifier and find the transaction that created the commitment; whatever that transaction reveals, such as a public fee payer, which by default is `to`, is linked to the payment. Private completion exposes neither.
+- **Timing.** `transfer_private_to_commitment` proves the validity nullifier against the block its transaction is anchored to, so the commitment must come from an earlier block. Public completion also works in the transaction that created it.
+- **Complete at most once.** Nothing stops a second completion, and it is paid for again, but the owner's wallet processes only the first completion log it finds, so reuse can leave the other payments undiscovered, not necessarily the later ones, and the funds out of reach of normal wallet discovery. "Safe" above does not make reuse safe.
 - **Zero.** Public completion rejects `amount == 0`. `transfer_private_to_commitment` accepts it and completes the commitment with an empty note.
-- **Refunds.** There is no `transfer_private_to_public_with_commitment`. A contract returning change privately calls `initialize_transfer_commitment(user, self)` alongside `transfer_private_to_public`, then completes the commitment publicly with the change.
+- **Refunds.** There is no `transfer_private_to_public_with_commitment`. A contract returning change privately calls `initialize_transfer_commitment(user, self)` alongside `transfer_private_to_public`, then completes the commitment publicly with the change, skipping that call when there is none, since public completion rejects a zero amount.
 
 ## Supply bound
 
-There is no total supply. The minter must keep each id's total at or below `u128::MAX`: private balances are summed in `u128`, so for an owner holding more, `balance_of_private` overflows and any transfer whose note selection sums past `u128::MAX` reverts.
+There is no total supply. The minter must keep each id's total at or below `u128::MAX`: private balances are summed in `u128`, so for an owner holding more, `balance_of_private` overflows and a private transfer whose note selection sums past `u128::MAX` fails in simulation, so nothing reaches the chain.
 
 ## TransferSingle Events
 
-A public `TransferSingle { from, to, id, amount }` event is emitted only on operations whose token id is already revealed on-chain (any public-balance write or public commitment completion). Private operations emit nothing, since an id-bearing event would leak the token id. `transfer_private_to_commitment` emits no event either, but still publishes the id and amount (see [Commitment trust model](#commitment-trust-model)).
+A public `TransferSingle { from, to, id, amount }` event is emitted only on operations whose token id is already revealed on-chain (any public-balance write or public commitment completion). The fully private operations (`transfer_private_to_private`, `mint_to_private`, `burn_private`) emit nothing, since an id-bearing event would leak the token id; private entrypoints that cross into public emit through their public part. `transfer_private_to_commitment` emits no event either, but still publishes the id and amount (see [Commitment trust model](#commitment-trust-model)).
 
 | Operation | Event Pattern |
 |-----------|---------------|
