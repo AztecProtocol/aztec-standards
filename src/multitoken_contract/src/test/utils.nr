@@ -1,13 +1,9 @@
 use crate::MultiToken;
-use aztec::{
-    oracle::random::random, protocol::address::AztecAddress,
-    test::helpers::test_environment::TestEnvironment,
-};
+use aztec::{protocol::address::AztecAddress, test::helpers::test_environment::TestEnvironment};
 use compressed_string::FieldCompressedString;
 use multitoken_authorization_contract::MultiTokenAuthorizationContract;
 use multitoken_authorization_contract::MultiTokenAuthorizationContract::AuthCall;
 use std::ops::WrappingSub;
-use std::test::OracleMock;
 
 /// Default mint amount used across the MultiToken test suite.
 pub global mint_amount: u128 = 10_000 as u128;
@@ -97,8 +93,6 @@ pub unconstrained fn setup_and_mint_to_public_with_minter(
 }
 
 /// @notice Mints `amount` of `id` to `recipient`'s PRIVATE balance as `caller`.
-/// @dev Mocks `getRandomField` before the private call so the inserted note's randomness is deterministic
-/// (private-note creation requires this oracle mock).
 pub unconstrained fn mint_to_private(
     env: TestEnvironment,
     multitoken_contract_address: AztecAddress,
@@ -107,9 +101,6 @@ pub unconstrained fn mint_to_private(
     amount: u128,
     caller: AztecAddress,
 ) {
-    let note_randomness = random();
-    let _ = OracleMock::mock("getRandomField").returns(note_randomness);
-
     env.call_private(
         caller,
         MultiToken::at(multitoken_contract_address).mint_to_private(recipient, id, amount),
