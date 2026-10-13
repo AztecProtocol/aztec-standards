@@ -4,7 +4,7 @@ use aztec::test::helpers::authwit as authwit_cheatcodes;
 use generic_proxy::GenericProxy;
 
 #[test]
-unconstrained fn transfer_private_to_commitment_success() {
+unconstrained fn transfer_private_to_commitment() {
     // Initialize a commitment with completer = owner (msg_sender at completion), then
     // transfer from the owner's private balance into it. Owner debits; recipient's private balance credits.
     let (env, multitoken_contract_address, owner, recipient, _) =

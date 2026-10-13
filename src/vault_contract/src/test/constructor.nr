@@ -7,7 +7,7 @@ use aztec::{
 use token_contract::Token;
 
 #[test]
-unconstrained fn constructor_success() {
+unconstrained fn constructor() {
     let mut env = TestEnvironment::new();
     let owner = env.create_light_account();
 
@@ -35,7 +35,7 @@ unconstrained fn constructor_success() {
 }
 
 #[test(should_fail_with = "vault_offset must be greater than 0")]
-unconstrained fn constructor_fail_zero_offset() {
+unconstrained fn constructor_failure_zero_offset() {
     let mut env = TestEnvironment::new();
     let owner = env.create_light_account();
 
@@ -63,7 +63,7 @@ unconstrained fn constructor_fail_zero_offset() {
 }
 
 #[test(should_fail_with = "asset must not be zero")]
-unconstrained fn constructor_fail_zero_asset() {
+unconstrained fn constructor_failure_zero_asset() {
     let mut env = TestEnvironment::new();
     let owner = env.create_light_account();
 
@@ -83,7 +83,7 @@ unconstrained fn constructor_fail_zero_asset() {
 }
 
 #[test(should_fail_with = "universal deploy not supported")]
-unconstrained fn constructor_fail_universal_deploy() {
+unconstrained fn constructor_failure_universal_deploy() {
     let mut env = TestEnvironment::new();
     let owner = env.create_light_account();
 

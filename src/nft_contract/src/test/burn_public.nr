@@ -3,7 +3,7 @@ use crate::test::utils;
 use aztec::{protocol::address::AztecAddress, test::helpers::authwit as authwit_cheatcodes};
 
 #[test]
-unconstrained fn nft_burn_public_success() {
+unconstrained fn burn_public() {
     // Setup and mint NFT to owner in public state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, _) = utils::setup_and_mint_to_public(false, token_id);
@@ -21,7 +21,7 @@ unconstrained fn nft_burn_public_success() {
 }
 
 #[test]
-unconstrained fn nft_burn_public_authorized_success() {
+unconstrained fn burn_public_authorized() {
     // Setup with account contracts and mint NFT to owner
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -42,7 +42,7 @@ unconstrained fn nft_burn_public_authorized_success() {
 }
 
 #[test(should_fail_with = "unauthorized")]
-unconstrained fn nft_burn_public_unauthorized_fail() {
+unconstrained fn burn_public_failure_unauthorized() {
     // Setup with account contracts
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -56,7 +56,7 @@ unconstrained fn nft_burn_public_unauthorized_fail() {
 }
 
 #[test(should_fail_with = "unauthorized")]
-unconstrained fn nft_burn_public_wrong_authwit_fail() {
+unconstrained fn burn_public_failure_wrong_authwit() {
     // Setup with account contracts
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -78,7 +78,7 @@ unconstrained fn nft_burn_public_wrong_authwit_fail() {
 }
 
 #[test(should_fail_with = "caller is not owner")]
-unconstrained fn nft_burn_public_non_existent_fail() {
+unconstrained fn burn_public_failure_non_existent() {
     // Setup but don't mint any NFT
     let (env, nft_contract_address, owner, _, _) = utils::setup_with_minter(false);
     let non_existent_token_id = 12345;

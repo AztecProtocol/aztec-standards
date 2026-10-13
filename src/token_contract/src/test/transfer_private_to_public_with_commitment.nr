@@ -137,7 +137,7 @@ unconstrained fn transfer_private_to_public_with_commitment_refunds_from() {
 }
 
 #[test(should_fail_with = "Invalid partial note or completer")]
-unconstrained fn transfer_private_to_public_with_commitment_and_finalize_with_invalid_commitment() {
+unconstrained fn transfer_private_to_public_with_commitment_failure_finalize_with_invalid_commitment() {
     let (mut env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_private_without_minter(false);
 
@@ -179,7 +179,7 @@ unconstrained fn transfer_private_to_public_with_commitment_and_finalize_with_in
 }
 
 #[test(should_fail_with = "Invalid partial note or completer")]
-unconstrained fn transfer_private_to_public_with_commitment_and_finalize_with_commitment_zero() {
+unconstrained fn transfer_private_to_public_with_commitment_failure_finalize_with_commitment_zero() {
     let (mut env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_private_without_minter(false);
 

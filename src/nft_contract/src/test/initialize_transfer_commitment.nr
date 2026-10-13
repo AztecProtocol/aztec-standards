@@ -2,7 +2,7 @@ use crate::NFT;
 use crate::test::utils;
 
 #[test]
-unconstrained fn nft_initialize_transfer_commitment_success() {
+unconstrained fn initialize_transfer_commitment() {
     // Setup with NFT in private state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -26,7 +26,7 @@ unconstrained fn nft_initialize_transfer_commitment_success() {
 }
 
 #[test]
-unconstrained fn nft_initialize_transfer_commitment_by_recipient_success() {
+unconstrained fn initialize_transfer_commitment_by_recipient() {
     // Setup with NFT in private state
     let token_id = 10000;
     let (env, nft_contract_address, _, _, recipient) =
@@ -42,7 +42,7 @@ unconstrained fn nft_initialize_transfer_commitment_by_recipient_success() {
 }
 
 #[test]
-unconstrained fn nft_initialize_transfer_commitment_self_success() {
+unconstrained fn initialize_transfer_commitment_self() {
     // Setup with NFT in private state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, _) =
@@ -58,7 +58,7 @@ unconstrained fn nft_initialize_transfer_commitment_self_success() {
 }
 
 #[test]
-unconstrained fn nft_initialize_transfer_commitment_by_third_party_success() {
+unconstrained fn initialize_transfer_commitment_by_third_party() {
     // Setup with NFT in private state
     let token_id = 10000;
     let (env, nft_contract_address, _, minter, recipient) =

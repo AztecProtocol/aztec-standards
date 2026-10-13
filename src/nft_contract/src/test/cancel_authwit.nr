@@ -10,7 +10,7 @@ use generic_proxy::GenericProxy;
 // the cancellation pre-emits the authwit nullifier, so the later authwit-gated transfer fails when
 // it tries to emit the same nullifier again.
 #[test(should_fail_with = "duplicate nullifiers")]
-unconstrained fn cancelled_authwit_cannot_be_consumed() {
+unconstrained fn cancel_authwit_failure_consume_cancelled_authwit() {
     let token_id = 1;
     let (mut env, nft_contract_address, owner, _minter, recipient, proxy) =
         utils::setup_and_mint_to_private_with_proxy(token_id);
@@ -40,7 +40,7 @@ unconstrained fn cancelled_authwit_cannot_be_consumed() {
 // Positive control: the same flow WITHOUT the cancel succeeds, attributing the failure above to the
 // cancellation.
 #[test]
-unconstrained fn uncancelled_authwit_is_consumed() {
+unconstrained fn cancel_authwit_uncancelled_authwit_is_consumed() {
     let token_id = 1;
     let (mut env, nft_contract_address, owner, _minter, recipient, proxy) =
         utils::setup_and_mint_to_private_with_proxy(token_id);
@@ -65,7 +65,7 @@ unconstrained fn uncancelled_authwit_is_consumed() {
 // Caller isolation: a foreign account cancelling with the owner's exact inner hash does NOT revoke
 // the owner's authwit — the nullifier is bound to `msg_sender`.
 #[test]
-unconstrained fn foreign_cancel_does_not_revoke_owner_authwit() {
+unconstrained fn cancel_authwit_by_foreign_caller_does_not_revoke_owner_authwit() {
     let token_id = 1;
     let (mut env, nft_contract_address, owner, _minter, recipient, proxy) =
         utils::setup_and_mint_to_private_with_proxy(token_id);

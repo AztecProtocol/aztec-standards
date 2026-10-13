@@ -4,7 +4,7 @@ use generic_proxy::GenericProxy;
 use token_contract::Token;
 
 #[test(should_fail_with = "Failed calling external resolver")]
-unconstrained fn issue_private_to_public_exact_without_shares() {
+unconstrained fn issue_private_to_public_exact_failure_without_shares() {
     let (env, vault_address, owner, recipient, _asset_address) =
         utils::setup_vault_without_shares();
 
@@ -21,7 +21,7 @@ unconstrained fn issue_private_to_public_exact_without_shares() {
 }
 
 #[test]
-unconstrained fn issue_private_to_public_exact_success() {
+unconstrained fn issue_private_to_public_exact() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(true);
@@ -118,7 +118,7 @@ unconstrained fn issue_private_to_public_exact_after_yield() {
 }
 
 #[test]
-unconstrained fn issue_private_to_public_exact_too_many_assets() {
+unconstrained fn issue_private_to_public_exact_with_change() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(true);
@@ -165,7 +165,7 @@ unconstrained fn issue_private_to_public_exact_too_many_assets() {
 }
 
 #[test(should_fail_with = "Assertion failed: attempt to subtract with overflow ")]
-unconstrained fn issue_private_to_public_exact_request_too_many_shares() {
+unconstrained fn issue_private_to_public_exact_failure_request_too_many_shares() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, _shares_address) =
         utils::setup_with_vault(true);
@@ -201,7 +201,7 @@ unconstrained fn issue_private_to_public_exact_request_too_many_shares() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash ")]
-unconstrained fn issue_private_to_public_exact_without_asset_approval() {
+unconstrained fn issue_private_to_public_exact_failure_without_asset_approval() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, _shares_address) =
         utils::setup_with_vault(true);
@@ -226,7 +226,7 @@ unconstrained fn issue_private_to_public_exact_without_asset_approval() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash ")]
-unconstrained fn issue_private_to_public_exact_on_behalf_of_wrong_caller() {
+unconstrained fn issue_private_to_public_exact_failure_on_behalf_of_wrong_caller() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, _shares_address) =
         utils::setup_with_vault(true);
@@ -268,7 +268,7 @@ unconstrained fn issue_private_to_public_exact_on_behalf_of_wrong_caller() {
 }
 
 #[test]
-unconstrained fn issue_private_to_public_exact_on_behalf_of_other_success() {
+unconstrained fn issue_private_to_public_exact_on_behalf_of_other() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(true);

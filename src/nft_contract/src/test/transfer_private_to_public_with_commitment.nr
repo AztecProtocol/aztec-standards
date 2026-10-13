@@ -5,7 +5,7 @@ use aztec::test::helpers::authwit as authwit_cheatcodes;
 use generic_proxy::GenericProxy;
 
 #[test]
-unconstrained fn nft_transfer_private_to_public_with_commitment_success() {
+unconstrained fn transfer_private_to_public_with_commitment() {
     // Setup and mint NFT to owner in private state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -32,7 +32,7 @@ unconstrained fn nft_transfer_private_to_public_with_commitment_success() {
 }
 
 #[test]
-unconstrained fn nft_transfer_private_to_public_with_commitment_authorized_success() {
+unconstrained fn transfer_private_to_public_with_commitment_authorized() {
     // Setup with account contracts and mint NFT to owner
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient, proxy) =
@@ -67,7 +67,7 @@ unconstrained fn nft_transfer_private_to_public_with_commitment_authorized_succe
 
 /// A contract takes custody of the token publicly, then hands it back privately: it must return to `from`.
 #[test]
-unconstrained fn nft_transfer_private_to_public_with_commitment_returns_to_from() {
+unconstrained fn transfer_private_to_public_with_commitment_returns_to_from() {
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, _, custodian) =
         utils::setup_and_mint_to_private_with_proxy(token_id);
@@ -114,7 +114,7 @@ unconstrained fn nft_transfer_private_to_public_with_commitment_returns_to_from(
 }
 
 #[test(should_fail_with = "nft not found")]
-unconstrained fn nft_transfer_private_to_public_with_commitment_non_existent_fail() {
+unconstrained fn transfer_private_to_public_with_commitment_failure_non_existent() {
     // Setup but don't mint any NFT
     let (env, nft_contract_address, owner, _, recipient) = utils::setup_with_minter(false);
     let non_existent_token_id = 12345;
@@ -132,7 +132,7 @@ unconstrained fn nft_transfer_private_to_public_with_commitment_non_existent_fai
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash")]
-unconstrained fn nft_transfer_private_to_public_with_commitment_unauthorized_fail() {
+unconstrained fn transfer_private_to_public_with_commitment_failure_unauthorized() {
     // Setup with account contracts
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient, proxy) =
@@ -154,7 +154,7 @@ unconstrained fn nft_transfer_private_to_public_with_commitment_unauthorized_fai
 }
 
 #[test(should_fail_with = "Invalid partial note or completer")]
-unconstrained fn nft_transfer_private_to_public_with_commitment_and_finalize_invalid_commitment_fail() {
+unconstrained fn transfer_private_to_public_with_commitment_failure_finalize_invalid_commitment() {
     // Setup and mint NFT to owner in private state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -187,7 +187,7 @@ unconstrained fn nft_transfer_private_to_public_with_commitment_and_finalize_inv
 }
 
 #[test(should_fail_with = "Invalid partial note or completer")]
-unconstrained fn nft_transfer_private_to_public_with_commitment_and_finalize_zero_commitment_fail() {
+unconstrained fn transfer_private_to_public_with_commitment_failure_finalize_zero_commitment() {
     // Setup and mint NFT to owner in private state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =

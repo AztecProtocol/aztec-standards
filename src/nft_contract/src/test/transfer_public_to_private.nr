@@ -7,7 +7,7 @@ use aztec::{
 use generic_proxy::GenericProxy;
 
 #[test]
-unconstrained fn nft_transfer_public_to_private_success() {
+unconstrained fn transfer_public_to_private() {
     // Setup and mint NFT to owner in public state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -29,7 +29,7 @@ unconstrained fn nft_transfer_public_to_private_success() {
 }
 
 #[test]
-unconstrained fn nft_transfer_public_to_private_authorized_success() {
+unconstrained fn transfer_public_to_private_authorized() {
     // Setup with account contracts (needed for authwits) and mint NFT to owner
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient, proxy) =
@@ -59,7 +59,7 @@ unconstrained fn nft_transfer_public_to_private_authorized_success() {
 }
 
 #[test(should_fail_with = "caller is not owner")]
-unconstrained fn nft_transfer_public_to_private_not_owned_fail() {
+unconstrained fn transfer_public_to_private_failure_not_owned() {
     // Setup environment but don't mint the NFT
     let (env, nft_contract_address, owner, _, recipient) = utils::setup_with_minter(false);
     let non_existent_token_id = 12345;
@@ -77,7 +77,7 @@ unconstrained fn nft_transfer_public_to_private_not_owned_fail() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash")]
-unconstrained fn nft_transfer_public_to_private_unauthorized_fail() {
+unconstrained fn transfer_public_to_private_failure_unauthorized() {
     // Setup with account contracts for proper authorization testing
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient, proxy) =

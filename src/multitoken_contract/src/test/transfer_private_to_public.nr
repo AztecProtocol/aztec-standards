@@ -4,7 +4,7 @@ use aztec::test::helpers::authwit as authwit_cheatcodes;
 use generic_proxy::GenericProxy;
 
 #[test]
-unconstrained fn transfer_private_to_public_success() {
+unconstrained fn transfer_private_to_public() {
     // Owner's private balance debits; recipient's PUBLIC balance credits the same amount.
     let (env, multitoken_contract_address, owner, recipient, _) =
         utils::setup_and_mint_to_private_with_minter(false, 1);

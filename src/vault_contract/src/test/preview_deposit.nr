@@ -9,7 +9,7 @@ use token_contract::Token;
 /// deposit variant is sufficient to verify the preview accuracy.
 
 #[test]
-unconstrained fn preview_deposit_success() {
+unconstrained fn preview_deposit() {
     // Setup with asset token
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(false);
@@ -48,7 +48,7 @@ unconstrained fn preview_deposit_success() {
 }
 
 #[test]
-unconstrained fn preview_deposit_with_yield_accrued_success() {
+unconstrained fn preview_deposit_with_yield_accrued() {
     // Setup with asset token
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(false);

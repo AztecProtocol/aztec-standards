@@ -3,7 +3,7 @@ use crate::test::utils::{self, mint_amount};
 use aztec::test::helpers::authwit as authwit_cheatcodes;
 
 #[test]
-unconstrained fn transfer_public_to_public_success() {
+unconstrained fn transfer_public_to_public() {
     // Both endpoints move by transfer_amount.
     let (env, multitoken_contract_address, owner, recipient, _) =
         utils::setup_and_mint_to_public_with_minter(false, 1);

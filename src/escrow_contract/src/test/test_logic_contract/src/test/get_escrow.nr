@@ -40,7 +40,7 @@ unconstrained fn get_escrow_correct_instance() {
 }
 
 #[test(should_fail_with = "Escrow address mismatch")]
-unconstrained fn get_escrow_public_keys_mismatch() {
+unconstrained fn get_escrow_failure_public_keys_mismatch() {
     let mut env = TestEnvironment::new();
 
     let (_, _, _, incorrect_secret_key) = logic_utils::get_test_vector();
@@ -58,7 +58,7 @@ unconstrained fn get_escrow_public_keys_mismatch() {
 }
 
 #[test(should_fail_with = "Escrow address mismatch")]
-unconstrained fn get_escrow_class_id_mismatch() {
+unconstrained fn get_escrow_failure_class_id_mismatch() {
     let mut env = TestEnvironment::new();
 
     let (_, secret_key, _, _) = logic_utils::get_test_vector();
@@ -78,7 +78,7 @@ unconstrained fn get_escrow_class_id_mismatch() {
 }
 
 #[test(should_fail_with = "Escrow address mismatch")]
-unconstrained fn get_escrow_salt_mismatch() {
+unconstrained fn get_escrow_failure_salt_mismatch() {
     let mut env = TestEnvironment::new();
 
     let (_, secret_key, _, _) = logic_utils::get_test_vector();

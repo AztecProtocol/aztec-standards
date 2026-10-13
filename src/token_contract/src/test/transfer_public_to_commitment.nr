@@ -32,7 +32,7 @@ unconstrained fn transfer_public_to_commitment_external_orchestration() {
 }
 
 #[test(should_fail_with = "Invalid partial note or completer")]
-unconstrained fn transfer_public_to_commitment_transfer_not_initialized() {
+unconstrained fn transfer_public_to_commitment_failure_transfer_not_initialized() {
     // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
     let (mut env, token_contract_address, owner, _) =
         utils::setup_and_mint_to_public_without_minter(false);

@@ -5,7 +5,7 @@ use generic_proxy::GenericProxy;
 use uint_note::UintNote;
 
 #[test]
-unconstrained fn transfer_private_on_behalf_of_other() {
+unconstrained fn transfer_private_to_private_on_behalf_of_other() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     let (mut env, token_contract_address, owner, recipient, proxy) =
         utils::setup_and_mint_to_private_with_proxy();
@@ -39,7 +39,7 @@ unconstrained fn transfer_private_on_behalf_of_other() {
 }
 
 #[test]
-unconstrained fn transfer_private_zero_amount() {
+unconstrained fn transfer_private_to_private_zero_amount() {
     let (mut env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_private_without_minter(false);
 
@@ -54,7 +54,7 @@ unconstrained fn transfer_private_zero_amount() {
 }
 
 #[test]
-unconstrained fn transfer_private_multiple_notes_recursively() {
+unconstrained fn transfer_private_to_private_multiple_notes_recursively() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     let (mut env, token_contract_address, owner, recipient, minter) =
         utils::setup_with_minter(true);
@@ -103,7 +103,7 @@ unconstrained fn transfer_private_multiple_notes_recursively() {
 }
 
 #[test(should_fail_with = "Balance too low")]
-unconstrained fn transfer_private_failure_on_behalf_of_more_than_balance() {
+unconstrained fn transfer_private_to_private_failure_on_behalf_of_other_more_than_balance() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     let (mut env, token_contract_address, owner, recipient, proxy) =
         utils::setup_and_mint_to_private_with_proxy();
@@ -130,7 +130,7 @@ unconstrained fn transfer_private_failure_on_behalf_of_more_than_balance() {
 
 // Unknown auth witness for message hash 0x055a9af747d60526794cfa8d3cf0b506831f34a202f85f6576ac67c429962b01
 #[test(should_fail_with = "Unknown auth witness for message hash ")]
-unconstrained fn transfer_private_failure_on_behalf_of_other_without_approval() {
+unconstrained fn transfer_private_to_private_failure_on_behalf_of_other_without_approval() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     let (mut env, token_contract_address, owner, recipient, proxy) =
         utils::setup_and_mint_to_private_with_proxy();
@@ -150,7 +150,7 @@ unconstrained fn transfer_private_failure_on_behalf_of_other_without_approval() 
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash")]
-unconstrained fn transfer_private_failure_on_behalf_of_other_wrong_caller() {
+unconstrained fn transfer_private_to_private_failure_on_behalf_of_other_wrong_caller() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     let (mut env, token_contract_address, owner, recipient, proxy) =
         utils::setup_and_mint_to_private_with_proxy();

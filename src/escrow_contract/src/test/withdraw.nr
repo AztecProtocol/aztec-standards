@@ -5,7 +5,7 @@ use aztec::test::helpers::test_environment::CallPrivateOptions;
 use token::{test::utils as token_utils, Token};
 
 #[test]
-unconstrained fn escrow_withdraw_success() {
+unconstrained fn withdraw() {
     let escrow_secret: Field = 123456;
     let (mut env, escrow_contract_address, token_contract_address, _, _, recipient, minter, logic_contract_address) =
         escrow_utils::set_escrow_with_token_and_nft(false, escrow_secret);
@@ -36,7 +36,7 @@ unconstrained fn escrow_withdraw_success() {
 }
 
 #[test]
-unconstrained fn escrow_withdraw_twice_success() {
+unconstrained fn withdraw_twice() {
     let escrow_secret: Field = 123456;
     let (mut env, escrow_contract_address, token_contract_address, _, _, recipient, minter, logic_contract_address) =
         escrow_utils::set_escrow_with_token_and_nft(false, escrow_secret);
@@ -86,7 +86,7 @@ unconstrained fn escrow_withdraw_twice_success() {
 }
 
 #[test(should_fail_with = "Not Authorized")]
-unconstrained fn escrow_withdraw_unauthorized() {
+unconstrained fn withdraw_failure_unauthorized() {
     let escrow_secret: Field = 123456;
     let (mut env, escrow_contract_address, token_contract_address, _, owner, recipient, _, _) =
         escrow_utils::set_escrow_with_token_and_nft(false, escrow_secret);
@@ -101,7 +101,7 @@ unconstrained fn escrow_withdraw_unauthorized() {
 /// The secret is a read capability, not a spend one: Token's authwit check calls the escrow's
 /// `verify_private_authwit(Field)` (selector 0xc7784917), which the escrow does not have, so a direct spend fails.
 #[test(should_fail_with = "Function with selector 0xc7784917 not found in the registered artifact")]
-unconstrained fn escrow_secret_holder_cannot_spend() {
+unconstrained fn withdraw_failure_secret_holder_spends_directly() {
     let escrow_secret: Field = 123456;
     let (env, escrow_contract_address, token_contract_address, _, _, attacker, minter, _) =
         escrow_utils::set_escrow_with_token_and_nft(false, escrow_secret);

@@ -1,7 +1,7 @@
 use crate::{test::utils, Token};
 
 #[test]
-unconstrained fn mint_to_public_success() {
+unconstrained fn mint_to_public() {
     // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
     let (mut env, token_contract_address, owner, _, minter) = utils::setup_with_minter(false);
 

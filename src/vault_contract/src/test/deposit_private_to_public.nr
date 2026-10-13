@@ -5,7 +5,7 @@ use generic_proxy::GenericProxy;
 use token_contract::Token;
 
 #[test(should_fail_with = "Failed calling external resolver")]
-unconstrained fn deposit_private_to_public_without_shares() {
+unconstrained fn deposit_private_to_public_failure_without_shares() {
     let (env, vault_address, owner, recipient, _asset_address) =
         utils::setup_vault_without_shares();
 
@@ -16,7 +16,7 @@ unconstrained fn deposit_private_to_public_without_shares() {
 }
 
 #[test]
-unconstrained fn deposit_private_to_public_success() {
+unconstrained fn deposit_private_to_public() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(true);
@@ -103,7 +103,7 @@ unconstrained fn deposit_private_to_public_after_yield() {
 }
 
 #[test(should_fail_with = "Zero shares, insufficient assets")]
-unconstrained fn deposit_private_to_public_zero_shares() {
+unconstrained fn deposit_private_to_public_failure_zero_shares() {
     let (mut env, vault_address, owner, recipient, asset_address, _shares_address) =
         utils::setup_with_vault(true);
 
@@ -132,7 +132,7 @@ unconstrained fn deposit_private_to_public_zero_shares() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash ")]
-unconstrained fn deposit_private_to_public_without_asset_approval() {
+unconstrained fn deposit_private_to_public_failure_without_asset_approval() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, _shares_address) =
         utils::setup_with_vault(true);
@@ -149,7 +149,7 @@ unconstrained fn deposit_private_to_public_without_asset_approval() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash ")]
-unconstrained fn deposit_private_to_public_on_behalf_of_wrong_caller() {
+unconstrained fn deposit_private_to_public_failure_on_behalf_of_wrong_caller() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, _shares_address) =
         utils::setup_with_vault(true);
@@ -184,7 +184,7 @@ unconstrained fn deposit_private_to_public_on_behalf_of_wrong_caller() {
 }
 
 #[test]
-unconstrained fn deposit_private_to_public_on_behalf_of_other_success() {
+unconstrained fn deposit_private_to_public_on_behalf_of_other() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(true);
