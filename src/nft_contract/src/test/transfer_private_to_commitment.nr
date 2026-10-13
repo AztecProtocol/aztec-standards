@@ -53,6 +53,26 @@ unconstrained fn nft_transfer_private_to_commitment_wrong_completer_fail() {
     );
 }
 
+/// A validity nullifier is siloed under the contract that created the commitment, so another contract's commitment
+/// cannot be completed here, although Token, MultiToken and NFT compute the same validity commitment for it.
+#[test(should_fail_with = "is reading an unknown nullifier")]
+unconstrained fn nft_transfer_private_to_commitment_foreign_commitment_fail() {
+    let token_id = 10000;
+    let (mut env, nft_contract_address, owner, minter, recipient) =
+        utils::setup_and_mint_to_private(false, token_id);
+    let other_nft_contract_address = utils::deploy_nft_with_minter(&mut env, owner, minter);
+
+    let commitment = env.call_private(
+        recipient,
+        NFT::at(other_nft_contract_address).initialize_transfer_commitment(recipient, owner),
+    );
+
+    env.call_private(
+        owner,
+        NFT::at(nft_contract_address).transfer_private_to_commitment(owner, token_id, commitment, 0),
+    );
+}
+
 #[test]
 unconstrained fn nft_transfer_private_to_commitment_authorized_success() {
     // Setup with account contracts and mint NFT to owner
