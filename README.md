@@ -115,4 +115,4 @@ The contracts above are the complete, intended scope of this repository. The Azt
 
 ## License
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE). Wonderland originally developed the project and assigned its copyright to the Aztec Foundation in 2026.
