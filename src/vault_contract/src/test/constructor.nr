@@ -29,6 +29,7 @@ unconstrained fn constructor() {
         0,
         random(),
         owner,
+        0,
     );
     let vault_address = vault_instance.to_address();
     env.call_public(owner, Vault::at(vault_address).constructor(asset_address, 1));
@@ -57,6 +58,7 @@ unconstrained fn constructor_failure_zero_offset() {
         0,
         random(),
         owner,
+        0,
     );
     let vault_address = vault_instance.to_address();
     env.call_public(owner, Vault::at(vault_address).constructor(asset_address, 0));
@@ -77,6 +79,7 @@ unconstrained fn constructor_failure_zero_asset() {
         0,
         random(),
         owner,
+        0,
     );
     let vault_address = vault_instance.to_address();
     env.call_public(owner, Vault::at(vault_address).constructor(zero_asset, 1));
@@ -107,6 +110,7 @@ unconstrained fn constructor_failure_universal_deploy() {
         0,
         random(),
         AztecAddress::zero(),
+        0,
     );
     let vault_address = vault_instance.to_address();
     env.call_public(owner, Vault::at(vault_address).constructor(asset_address, 1));

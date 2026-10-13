@@ -15,17 +15,22 @@ compiles, tests, typechecks, and builds against the new deps — ready to open a
 **Publishing (rc / production) is handled by the separate `release` skill** — this skill stops at a
 merged, validated bump.
 
-Since v6 Aztec ships from three places, all tagged `vX.Y.Z`:
+Since v6 Aztec ships from three places, each with its own `vX.Y.Z` tags:
 - **aztec-nr** crates (`aztec`, `uint-note`, `balance-set`, `compressed-string`, …): `aztec-labs-eng/aztec-nr`, flat crate dirs.
-- **protocol crates** (`serde`, `types`): `AztecProtocol/aztec-packages`, under `noir-projects/fnd/noir-protocol-circuits/crates/`.
+- **protocol crates** (`serde`, `types`) and the `@aztec-foundation/*` npm packages (`bb.js`, `noir-*`):
+  `AztecProtocol/aztec-packages`, the crates under `noir-projects/fnd/noir-protocol-circuits/crates/`.
 - **npm SDK + toolchain** (`@aztec-labs/*`, `aztec-up`): built from `aztec-labs-eng/aztec-node`; its
   `docs/docs-developers/docs/resources/migration_notes.md` is the authoritative changelog.
 
+aztec-nr and the SDK share a version; aztec-packages numbers its releases independently, and an aztec-nr
+release builds on whichever one it pins (6.0.0-rc.3 pins aztec-packages `v6.0.0-rc.6`, which has no `rc.3`).
+
 ## Step 0 — gather inputs (ask the user)
 Use `AskUserQuestion` (or ask directly) for:
-1. **Target version** — a **tag** `vX.Y.Z[-suffix]` (release, rc, or nightly) that exists in aztec-nr,
-   aztec-packages and npm alike; the npm version is the tag without its `v`. A bare commit identifies only
-   one of the three repos, so for an untagged commit stop and ask the user for the matching revision of each.
+1. **Target version** — an aztec-nr **tag** `vX.Y.Z[-suffix]` (release, rc, or nightly) whose `@aztec-labs/*`
+   packages are on npm; the npm version is the tag without its `v`. The aztec-packages tag `vP` is derived
+   from it below, never assumed equal. A bare commit identifies only one of the repos, so for an untagged
+   commit stop and ask the user for the matching revision of each.
 2. **Source** — a **path to a local checkout** of aztec-nr / aztec-node, or the GitHub repos. The source is for *diagnosis*, not the dep URL (Nargo deps always point at the GitHub git URL).
 
 Verify the target exists before touching anything, and record the full SHAs for the PR body (Nargo
@@ -33,8 +38,11 @@ pins by tag only, and tags can move). An unmatched `ls-remote` pattern prints no
 hence `--exit-code`; query both refs because the repos mix annotated and lightweight tags, and record the
 peeled `^{}` commit when present:
 - `git ls-remote --exit-code https://github.com/aztec-labs-eng/aztec-nr 'refs/tags/vX.Y.Z' 'refs/tags/vX.Y.Z^{}'`
-- `git ls-remote --exit-code https://github.com/AztecProtocol/aztec-packages 'refs/tags/vX.Y.Z' 'refs/tags/vX.Y.Z^{}'`
-- `npm view @aztec-labs/aztec.js@X.Y.Z version` must print the version (a missing one fails with E404).
+- `vP` is the tag aztec-nr's own `protocol_types` dependency pins at the target:
+  `curl -fsSL https://raw.githubusercontent.com/aztec-labs-eng/aztec-nr/vX.Y.Z/aztec/Nargo.toml | grep protocol_types`,
+  then `git ls-remote --exit-code https://github.com/AztecProtocol/aztec-packages 'refs/tags/vP' 'refs/tags/vP^{}'`.
+- `npm view @aztec-labs/aztec.js@X.Y.Z version` must print the version (a missing one fails with E404), and
+  `npm view @aztec-labs/stdlib@X.Y.Z dependencies` names the `@aztec-foundation/bb.js` version the SDK runs on.
 
 ## Step 1 — bump the Noir deps (all `Nargo.toml`)
 ```bash
@@ -43,8 +51,9 @@ find . -name Nargo.toml -not -path '*/node_modules/*'
 - aztec-nr deps: `git = "https://github.com/aztec-labs-eng/aztec-nr"`, `tag = "vX.Y.Z"`,
   `directory = "<crate dir>"` (`aztec`, `uint-note`, `balance-set`, `compressed-string`).
 - protocol deps (escrow's `serde`): `git = "https://github.com/AztecProtocol/aztec-packages"` (no trailing
-  slash — the same string aztec-nr's own `protocol_types` dep uses), same tag,
-  `directory = "noir-projects/fnd/noir-protocol-circuits/crates/serde"`.
+  slash — the same string aztec-nr's own `protocol_types` dep uses), `tag = "vP"` from Step 0 (not the
+  aztec-nr tag), `directory = "noir-projects/fnd/noir-protocol-circuits/crates/serde"`. `types` reaches
+  `serde` by path inside that checkout, so any other tag adds a second, unrelated `serde` crate.
 - **Do NOT touch** other deps: `bignum` versions independently, and `sha512` tracks upstream `master` (it
   has no tags). Instead refresh its entry in `noir-dep-revisions.txt`: if
   `git ls-remote https://github.com/noir-lang/sha512 refs/heads/master` no longer matches it, review the
@@ -53,9 +62,9 @@ find . -name Nargo.toml -not -path '*/node_modules/*'
   (function bytecode, verification keys, class ids) must be called out.
 
 ## Step 2 — bump the npm deps (`package.json`)
-- Every `@aztec-labs/*` dependency and `@aztec-foundation/bb.js` → the npm version, **pinned exactly**: the
-  `latest` dist-tag has pointed at a stale nightly, and a stale bb.js pin installs a second Barretenberg next
-  to the SDK's.
+- Every `@aztec-labs/*` dependency → the npm version, and `@aztec-foundation/bb.js` → the version that SDK
+  depends on (Step 0), both **pinned exactly**: the `latest` dist-tag has pointed at a stale nightly, and any
+  other bb.js pin installs a second Barretenberg next to the SDK's.
 - `viem` stays the `npm:@aztec/viem@…` alias the SDK itself uses.
 - `config.aztecVersion` → the npm version (the `setup-aztec` CI action reads this to install the toolchain).
 - The package's own `version` is the *release* version — bump it too if this repo tracks aztec (it does), else leave.
@@ -118,6 +127,12 @@ When everything is green: commit, open a PR to `main`, let CI pass, merge. Then 
 ---
 
 ## Gotchas (bump-time — check these first)
+- **The migration notes are not the diff.** 6.0.0-rc.3's notes omit that `txe_oracles::deploy` and
+  `ContractDeployment` gained an `immutables_hash`, which the vault and escrow tests pass directly (0 is the
+  `DeployOptions` default and what escrow's address derivation assumes), and they list a `Writer::advance_offset`
+  removal the pinned protocol crates do not contain. Diff aztec-nr's `aztec/src` and the protocol crates between
+  the old and target tags (nargo caches both under `~/nargo/github.com/<org>/<repo>/<tag>`) against what
+  `src/**/*.nr` uses: a compile catches changed signatures, not changed behaviour.
 - **Toolchain mismatch.** The default local `aztec`/`nargo` is often an older version that can't parse
   the target's aztec-nr. Always install the target version (isolated, per Step 3).
 - **Worktrees inside the main checkout build the main checkout.** nargo roots itself at the *topmost*
