@@ -93,7 +93,7 @@ All addresses are `AztecAddress`; `id` is a `Field`, `amount` is a `u128`, and `
 - `transfer_private_to_public(from, to, id, amount, nonce)` — Spends private notes and enqueues a public credit to `to`.
 - `transfer_private_to_commitment(from, id, commitment, amount, nonce)` — Spends private notes and completes, in private, a commitment from an earlier block with `(id, amount)`, which are published. The caller must be the commitment's completer.
 - `transfer_public_to_private(from, to, id, amount, nonce)` — Enqueues a public debit of `from` and emits a private note to `to`.
-- `initialize_transfer_commitment(to, completer) -> Field` — Creates a commitment owned by `to` that only `completer` can complete, once. Id-agnostic: the completer binds `id` and `amount`. See [Commitment trust model](#commitment-trust-model) before using a commitment as a payment guarantee.
+- `initialize_transfer_commitment(to, completer) -> Field` — Creates a commitment owned by `to` that only `completer` can complete. Id-agnostic: the completer binds `id` and `amount`. Nothing enforces single-use completion, and the owner's wallet processes only the first completion log it finds, so later payments can go undiscovered; see [Commitment trust model](#commitment-trust-model) before using a commitment as a payment guarantee.
 - `mint_to_private(to, id, amount)` — Minter mints `id` into a private balance. Fully private.
 - `burn_private(from, id, amount, nonce)` — Burns `id` from a private balance. Fully private.
 - `cancel_authwit(inner_hash)` — Cancels a private authwit the caller previously granted, by emitting its `(msg_sender, inner_hash)` nullifier so it can no longer be consumed.
