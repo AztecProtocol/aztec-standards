@@ -107,7 +107,7 @@ The Escrow Standard contains two elements:
 
 📖 **[View detailed Escrow documentation](src/escrow_contract/README.md)**
 
-To see examples of Logic contract implementations, such as a linear vesting contract or a clawback escrow contract, go to [aztec-escrow-extensions](https://github.com/defi-wonderland/aztec-escrow-extensions).
+For examples of Logic contract implementations, such as a linear vesting contract or a clawback escrow contract, see the archived [aztec-escrow-extensions](https://github.com/defi-wonderland/aztec-escrow-extensions) repository, last built against Aztec 5.0.0-rc.1.
 
 ## Scope & Maintenance
 

@@ -4,7 +4,7 @@ The Escrow Standard defines a minimal, reusable on-chain Escrow contract that sa
 
 Since encryption and nullification keys are needed to read and spend private balances, respectively, the Escrow contract must have keys. A single secret key is used to derive all master secret keys and public keys internally. Logic contracts should implement a key- and escrow-sharing mechanism, for which a Logic library with helper functions is provided.
 
-Logic contract implementations may vary greatly among use cases, but the basic patterns presented here, available in the logic library, should be used carefully, so that privacy is preserved. Examples of logic contracts can be found [here](https://github.com/defi-wonderland/aztec-escrow-extensions).
+Logic contract implementations may vary greatly among use cases, but the basic patterns presented here, available in the logic library, should be used carefully, so that privacy is preserved. Examples of logic contracts are in the archived [aztec-escrow-extensions](https://github.com/defi-wonderland/aztec-escrow-extensions) repository, last built against Aztec 5.0.0-rc.1.
 
 ## Escrow Contract
 

@@ -6,8 +6,6 @@ type = "contract"
 
 [dependencies]
 aztec = { git = "https://github.com/aztec-labs-eng/aztec-nr", tag = "v6.0.0-rc.3", directory = "aztec" }
-# The aztec-packages tag that this aztec-nr tag pins for protocol_types: any other tag adds a second serde crate.
-serde = { git = "https://github.com/AztecProtocol/aztec-packages", tag = "v6.0.0-rc.6", directory = "noir-projects/fnd/noir-protocol-circuits/crates/serde" }
 token = { path = "../token_contract" }
 nft = { path = "../nft_contract" }
 # Upstream has no tags and nargo pins only refs, so CI checks the resolved commit (scripts/check-noir-deps.sh).

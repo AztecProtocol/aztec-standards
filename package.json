@@ -43,6 +43,7 @@
     "lint-staged": "16.2.7",
     "prettier": "3.8.0",
     "typescript": "5.9.3",
+    "viem": "npm:@aztec/viem@2.38.3",
     "vitest": "4.1.11"
   },
   "resolutions": {
