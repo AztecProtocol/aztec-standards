@@ -605,7 +605,7 @@ pub contract Token {
 
     /// @notice Completes a partial note
     /// @dev Completes a partial note and increases the balance of the commitment by `amount`
-    /// @param commitment The partial note representing the commitment (privacy entrance)
+    /// @param commitment The commitment to complete
     /// @param completer The address used to compute the validity commitment
     /// @param amount The amount of tokens to increase the balance of the commitment by
     #[internal("public")]

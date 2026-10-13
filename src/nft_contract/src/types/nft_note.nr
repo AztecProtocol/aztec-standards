@@ -98,8 +98,8 @@ impl NFTNote {
     /// the first completion log it finds, so reuse can leave the other token undiscovered (and links the completions to
     /// the same owner).
     ///
-    /// As part of the partial note creation process, a log will be sent to `recipient` from `sender` so that they can
-    /// discover the note. `recipient` will typically be the same as `owner`.
+    /// As part of the partial note creation process, a log will be sent to `recipient` so that they can discover the
+    /// note. `recipient` will typically be the same as `owner`.
     pub fn partial(
         owner: AztecAddress,
         context: &mut PrivateContext,
@@ -219,11 +219,11 @@ impl PartialNFTNote {
         context.push_note_hash(self.compute_complete_note_hash(storage_slot, token_id));
     }
 
-    /// Completes the partial note from private execution, requiring a settled validity commitment for the designated
-    /// completer: the partial note cannot be created in the same transaction. The token id is still published, through
-    /// an unencrypted log on the private-log channel. There is no `token_id != 0` guard: private logs keep their
-    /// length, so the trailing-zero problem behind the public guard does not apply, and the id comes from a note the
-    /// caller just spent.
+    /// Completes the partial note from private execution. The validity commitment for the designated completer is
+    /// proven against the block the transaction is anchored to, so the partial note must come from an earlier block.
+    /// The token id is still published, through an unencrypted log on the private-log channel. There is no
+    /// `token_id != 0` guard: private logs keep their length, so the trailing-zero problem behind the public guard does
+    /// not apply, and the id comes from a note the caller just spent.
     pub fn complete_from_private(
         self,
         context: &mut PrivateContext,

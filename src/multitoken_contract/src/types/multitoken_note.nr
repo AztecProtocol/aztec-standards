@@ -231,9 +231,10 @@ impl PartialMultiTokenNote {
         context.push_note_hash(self.compute_complete_note_hash(storage_slot, token_id, value));
     }
 
-    /// Completes the partial note from private execution, requiring a settled validity commitment for the designated
-    /// completer: the partial note cannot be created in the same transaction. Unlike `complete`, a zero value is
-    /// accepted. The id and value are still published, through an unencrypted log on the private-log channel.
+    /// Completes the partial note from private execution. The validity commitment for the designated completer is
+    /// proven against the block the transaction is anchored to, so the partial note must come from an earlier block.
+    /// Unlike `complete`, a zero value is accepted. The id and value are still published, through an unencrypted log
+    /// on the private-log channel.
     pub fn complete_from_private(
         self,
         context: &mut PrivateContext,

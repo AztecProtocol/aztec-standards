@@ -29,7 +29,7 @@ pub contract NFT {
 
     /// @param symbol The symbol of the NFT
     /// @param name The name of the NFT
-    /// @param private_nfts A map from address to a private set of NFTNotes owned by that address
+    /// @param private_nfts The private NFT notes; `private_nfts.at(owner)` is one account's note set
     /// @param nft_exists A map from token ID to a boolean indicating if the NFT exists
     /// @param public_owners A map from token ID to the public owner of the NFT
     /// @param minter The address that can mint

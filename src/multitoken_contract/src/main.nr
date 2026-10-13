@@ -587,7 +587,7 @@ pub contract MultiToken {
     /// @dev `complete` reverts unless `completer` reproduces the validity commitment pushed at creation. The
     ///      `base_slot` is the SINGLE slot of `private_balances` (not per-owner, not per-id) - the owner is bound
     ///      inside the commitment H(owner, randomness).
-    /// @param commitment The partial note representing the commitment (privacy entrance)
+    /// @param commitment The commitment to complete
     /// @param completer The address used to compute the validity commitment
     /// @param id The token id to credit
     /// @param amount The amount of tokens to credit
