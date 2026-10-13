@@ -42,5 +42,8 @@ jobs:
           start-pxe: 'true'
           run-codegen: 'true'
 
+      - name: Typecheck
+        run: yarn typecheck
+
       - name: Run JS tests
         uses: AztecProtocol/aztec-ci-actions/actions/js-tests@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
