@@ -46,6 +46,7 @@ pub unconstrained fn setup_with_vault(
         0,
         random(),
         owner,
+        0,
     );
     let vault_address = vault_instance.to_address();
     env.call_public(owner, Vault::at(vault_address).constructor(asset_address, 1));
@@ -103,6 +104,7 @@ pub unconstrained fn setup_with_vault_initial_deposit(
         0,
         random(),
         owner,
+        0,
     );
     let vault_address = vault_instance.to_address();
     env.call_public(owner, Vault::at(vault_address).constructor(asset_address, 1));
@@ -164,6 +166,7 @@ pub unconstrained fn setup_vault_without_shares() -> (TestEnvironment, AztecAddr
         0,
         random(),
         owner,
+        0,
     );
     let vault_address = vault_instance.to_address();
     env.call_public(owner, Vault::at(vault_address).constructor(asset_address, 1));
