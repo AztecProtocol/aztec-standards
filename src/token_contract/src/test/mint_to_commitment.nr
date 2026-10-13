@@ -2,7 +2,7 @@ use crate::{test::utils, Token};
 use aztec::oracle::random::random;
 
 #[test]
-unconstrained fn mint_to_commitment_success() {
+unconstrained fn mint_to_commitment() {
     // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
     let (mut env, token_contract_address, _, recipient, minter) = utils::setup_with_minter(false);
 
@@ -24,7 +24,7 @@ unconstrained fn mint_to_commitment_success() {
 }
 
 #[test(should_fail_with = "caller is not minter")]
-unconstrained fn mint_to_private_failure_unauthorized() {
+unconstrained fn mint_to_commitment_failure_unauthorized() {
     let (mut env, token_contract_address, _, recipient, _) = utils::setup_with_minter(false);
 
     let commitment = env.call_private(
@@ -40,7 +40,7 @@ unconstrained fn mint_to_private_failure_unauthorized() {
 }
 
 #[test(should_fail_with = "attempt to add with overflow 'self.storage.total_supply.read() + amount'")]
-unconstrained fn mint_to_private_failure_balance_overflow() {
+unconstrained fn mint_to_commitment_failure_total_supply_overflow_reused_commitment() {
     let (mut env, token_contract_address, owner, recipient, minter) =
         utils::setup_with_minter(false);
 
@@ -66,7 +66,7 @@ unconstrained fn mint_to_private_failure_balance_overflow() {
 }
 
 #[test(should_fail_with = "attempt to add with overflow 'self.storage.total_supply.read() + amount'")]
-unconstrained fn mint_to_private_failure_total_supply_overflow() {
+unconstrained fn mint_to_commitment_failure_total_supply_overflow() {
     let (mut env, token_contract_address, owner, recipient, minter) =
         utils::setup_with_minter(false);
 
@@ -96,7 +96,7 @@ unconstrained fn mint_to_private_failure_total_supply_overflow() {
 }
 
 #[test(should_fail_with = "Invalid partial note or completer")]
-unconstrained fn mint_to_private_failure_invalid_commitments_random() {
+unconstrained fn mint_to_commitment_failure_invalid_commitments_random() {
     let (mut env, token_contract_address, _, _, minter) = utils::setup_with_minter(false);
 
     let mint_amount: u128 = 10_000;
@@ -108,7 +108,7 @@ unconstrained fn mint_to_private_failure_invalid_commitments_random() {
 }
 
 #[test(should_fail_with = "Invalid partial note or completer")]
-unconstrained fn mint_to_private_failure_invalid_commitments_zero() {
+unconstrained fn mint_to_commitment_failure_invalid_commitments_zero() {
     let (mut env, token_contract_address, _, _, minter) = utils::setup_with_minter(false);
 
     let mint_amount: u128 = 10_000;

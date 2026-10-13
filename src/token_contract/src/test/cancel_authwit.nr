@@ -10,7 +10,7 @@ use generic_proxy::GenericProxy;
 // consume it: the cancellation pre-emits the authwit nullifier, so the later authwit-gated transfer
 // fails when it tries to emit the same nullifier again.
 #[test(should_fail_with = "duplicate nullifiers")]
-unconstrained fn cancelled_authwit_cannot_be_consumed() {
+unconstrained fn cancel_authwit_failure_consume_cancelled_authwit() {
     let (mut env, token_contract_address, owner, recipient, proxy) =
         utils::setup_and_mint_to_private_with_proxy();
 
@@ -47,7 +47,7 @@ unconstrained fn cancelled_authwit_cannot_be_consumed() {
 // Sanity: the SAME flow WITHOUT the cancel succeeds, so the failure above is attributable to the
 // cancellation and not to some unrelated setup problem.
 #[test]
-unconstrained fn uncancelled_authwit_is_consumed() {
+unconstrained fn cancel_authwit_uncancelled_authwit_is_consumed() {
     let (mut env, token_contract_address, owner, recipient, proxy) =
         utils::setup_and_mint_to_private_with_proxy();
 
@@ -77,7 +77,7 @@ unconstrained fn uncancelled_authwit_is_consumed() {
 // the owner's authwit — the nullifier is bound to `msg_sender`, so the foreign cancel nullifies a
 // different (attacker-bound) value and the owner's grant to the proxy still consumes successfully.
 #[test]
-unconstrained fn foreign_cancel_does_not_revoke_owner_authwit() {
+unconstrained fn cancel_authwit_by_foreign_caller_does_not_revoke_owner_authwit() {
     let (mut env, token_contract_address, owner, recipient, proxy) =
         utils::setup_and_mint_to_private_with_proxy();
 

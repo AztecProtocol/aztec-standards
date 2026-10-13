@@ -3,7 +3,7 @@ use crate::Token;
 use aztec::test::helpers::authwit as authwit_cheatcodes;
 
 #[test]
-unconstrained fn public_transfer() {
+unconstrained fn transfer_public_to_public() {
     // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
     let (mut env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_public_without_minter(false);
@@ -30,7 +30,7 @@ unconstrained fn public_transfer() {
 }
 
 #[test]
-unconstrained fn public_transfer_to_self() {
+unconstrained fn transfer_public_to_public_to_self() {
     // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
     let (mut env, token_contract_address, owner, _) =
         utils::setup_and_mint_to_public_without_minter(false);
@@ -50,7 +50,7 @@ unconstrained fn public_transfer_to_self() {
 }
 
 #[test]
-unconstrained fn public_transfer_on_behalf_of_other() {
+unconstrained fn transfer_public_to_public_on_behalf_of_other() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     let (mut env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_public_without_minter(true);
@@ -77,7 +77,7 @@ unconstrained fn public_transfer_on_behalf_of_other() {
 }
 
 #[test(should_fail_with = "attempt to subtract with overflow 'self.storage.public_balances.at(from).read() - amount'")]
-unconstrained fn public_transfer_failure_more_than_balance() {
+unconstrained fn transfer_public_to_public_failure_more_than_balance() {
     // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
     let (mut env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_public_without_minter(false);
@@ -90,7 +90,7 @@ unconstrained fn public_transfer_failure_more_than_balance() {
 }
 
 #[test(should_fail_with = "unauthorized")]
-unconstrained fn public_transfer_failure_on_behalf_of_other_without_approval() {
+unconstrained fn transfer_public_to_public_failure_on_behalf_of_other_without_approval() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     let (mut env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_public_without_minter(true);
@@ -103,7 +103,7 @@ unconstrained fn public_transfer_failure_on_behalf_of_other_without_approval() {
 }
 
 #[test(should_fail_with = "attempt to subtract with overflow 'self.storage.public_balances.at(from).read() - amount'")]
-unconstrained fn public_transfer_failure_on_behalf_of_other_more_than_balance() {
+unconstrained fn transfer_public_to_public_failure_on_behalf_of_other_more_than_balance() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     let (mut env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_public_without_minter(true);
@@ -122,7 +122,7 @@ unconstrained fn public_transfer_failure_on_behalf_of_other_more_than_balance() 
 }
 
 #[test(should_fail_with = "unauthorized")]
-unconstrained fn public_transfer_failure_on_behalf_of_other_wrong_caller() {
+unconstrained fn transfer_public_to_public_failure_on_behalf_of_other_wrong_caller() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     let (mut env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_public_without_minter(true);

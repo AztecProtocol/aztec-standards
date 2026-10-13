@@ -3,7 +3,7 @@ use crate::Token;
 use aztec::{oracle::random::random, test::helpers::authwit as authwit_cheatcodes};
 
 #[test]
-unconstrained fn burn_public_success() {
+unconstrained fn burn_public() {
     let (mut env, token_contract_address, owner, _) =
         utils::setup_and_mint_to_public_without_minter(false);
     let burn_amount = mint_amount / 10 as u128;

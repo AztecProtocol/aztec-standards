@@ -322,7 +322,7 @@ unconstrained fn authorization_hook_not_called_on_mint_to_commitment() {
 }
 
 #[test(should_fail_with = "operation not authorized")]
-unconstrained fn transfer_public_to_public_reverts_when_auth_rejects() {
+unconstrained fn authorization_failure_hook_rejects_transfer_public_to_public() {
     // Setup with auth contract; hook fires on every transfer
     let (mut env, token_contract_address, owner, recipient, auth_contract) =
         utils::setup_with_auth_contract(false, mint_amount);
@@ -344,7 +344,7 @@ unconstrained fn transfer_public_to_public_reverts_when_auth_rejects() {
 }
 
 #[test(should_fail_with = "operation not authorized")]
-unconstrained fn transfer_private_to_private_reverts_when_auth_rejects() {
+unconstrained fn authorization_failure_hook_rejects_transfer_private_to_private() {
     // Setup with auth contract and private balance; mint does not fire the hook
     let (mut env, token_contract_address, owner, recipient, _, auth_contract) =
         utils::setup_and_mint_to_private_with_auth(false);

@@ -3,7 +3,7 @@ use aztec::test::helpers::authwit as authwit_cheatcodes;
 use generic_proxy::GenericProxy;
 
 #[test]
-unconstrained fn transfer_public_to_private_success() {
+unconstrained fn transfer_public_to_private() {
     let (mut env, token_contract_address, sender, recipient) =
         utils::setup_and_mint_to_public_without_minter(false);
 
@@ -35,7 +35,7 @@ unconstrained fn transfer_public_to_private_success() {
 }
 
 #[test(should_fail_with = "Assertion failed: attempt to subtract with overflow 'self.storage.public_balances.at(from).read() - amount'")]
-unconstrained fn transfer_public_to_private_not_enough_balance() {
+unconstrained fn transfer_public_to_private_failure_not_enough_balance() {
     let (mut env, token_contract_address, sender, recipient) =
         utils::setup_and_mint_to_public_without_minter(false);
 
@@ -57,7 +57,7 @@ unconstrained fn transfer_public_to_private_not_enough_balance() {
 }
 
 #[test]
-unconstrained fn transfer_public_to_private_authwitness_success() {
+unconstrained fn transfer_public_to_private_on_behalf_of_other() {
     let (mut env, token_contract_address, sender, recipient, proxy) =
         utils::setup_and_mint_to_public_with_proxy();
 
@@ -88,7 +88,7 @@ unconstrained fn transfer_public_to_private_authwitness_success() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash")]
-unconstrained fn transfer_public_to_private_authwitness_unauthorized() {
+unconstrained fn transfer_public_to_private_failure_on_behalf_of_other_without_approval() {
     let (mut env, token_contract_address, sender, _recipient, proxy) =
         utils::setup_and_mint_to_public_with_proxy();
 
