@@ -5,10 +5,11 @@ import {
   assertOwnsPublicNFT,
   initializeTransferCommitmentNFT,
   expectNFTTransferEvents,
+  getPublicLogsOf,
   PRIVATE_ADDRESS,
 } from './utils.js';
 
-import { Fr, GrumpkinScalar } from '@aztec-labs/aztec.js/fields';
+import { Fr } from '@aztec-labs/aztec.js/fields';
 import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
 import { type EmbeddedWallet } from '@aztec-labs/wallets/embedded';
 import { ContractDeployer } from '@aztec-labs/aztec.js/deployment';
@@ -96,12 +97,8 @@ describe('NFT', () => {
       // Verify alice owns the NFT privately
       await assertOwnsPrivateNFT(nft, tokenId, alice, true);
 
-      // We create a new account manager for bob and override the address for this test
-      const bobAccountManager = await wallet.createSchnorrAccount(Fr.random(), Fr.random(), GrumpkinScalar.random());
-      const bob = bobAccountManager.address;
-
-      // Generate the commitment
-      const commitment = await initializeTransferCommitmentNFT(nft, alice, bobAccountManager, alice);
+      // Bob, the recipient, creates the commitment and names alice, the sender, as its completer.
+      const commitment = await initializeTransferCommitmentNFT(nft, bob, bob, alice);
 
       // Alice transfers NFT to the commitment
       const { receipt: commitmentTx } = await nft.methods
@@ -110,6 +107,10 @@ describe('NFT', () => {
 
       // transfer_private_to_commitment: (no public events)
       await expectNFTTransferEvents(commitmentTx.txHash, nft.address, []);
+      // Completed in private: no public log. The old path completed through an enqueued public call, which emitted one.
+      // The mint's public Transfer event shows the helper does find this contract's logs when there are any.
+      expect((await getPublicLogsOf(mintTx.txHash, nft.address)).length).toBeGreaterThan(0);
+      expect(await getPublicLogsOf(commitmentTx.txHash, nft.address)).toHaveLength(0);
 
       // Verify alice no longer owns the NFT
       await assertOwnsPrivateNFT(nft, tokenId, alice, false);

@@ -1,42 +1,20 @@
 use crate::{test::utils::{self, mint_amount}, Token};
 use aztec::oracle::random::random;
-use std::test::OracleMock;
+use aztec::test::helpers::authwit as authwit_cheatcodes;
+use generic_proxy::GenericProxy;
 
-/// Internal orchestration means that the calls to `initialize_transfer_commitment`
-/// and `transfer_public_to_commitment` are done by the TOKEN contract itself.
-/// In this test's case this is done by the `Token::transfer_public_to_commitment(...)` function called
-/// in `utils::setup_mint_and_transfer_public_to_commitment`.
-#[test]
-unconstrained fn transfer_public_to_commitment_internal_orchestration() {
-    // The transfer to private is done in `utils::setup_and_mint_to_private_without_minter` and for this reason
-    // in this test we just call it and check the outcome.
-    // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
-    let (mut env, token_contract_address, user, _) =
-        utils::setup_and_mint_to_private_without_minter(false);
-
-    // User's private balance should be equal to the amount
-    utils::check_private_balance(env, token_contract_address, user, mint_amount);
-}
-
-/// External orchestration means that the calls to prepare and finalize are not done by the Token contract. This flow
-/// will typically be used by a DEX.
+/// The documented flow: the recipient creates the commitment naming the payer, who completes it from its public
+/// balance.
 #[test]
 unconstrained fn transfer_public_to_commitment_external_orchestration() {
     // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
-    let (mut env, token_contract_address, owner, recipient) =
+    let (env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_public_without_minter(false);
 
-    let note_randomness = random();
-
-    // We mock the Oracle to return the note randomness such that later on we can manually add the note
-    let _ = OracleMock::mock("getRandomField").returns(note_randomness);
-
-    // We prepare the transfer
-    let commitment_result = env.call_private(
-        owner,
+    let commitment = env.call_private(
+        recipient,
         Token::at(token_contract_address).initialize_transfer_commitment(recipient, owner),
     );
-    let commitment = commitment_result;
 
     // Finalize the transfer of the tokens (message sender owns the tokens in public)
     env.call_public(
@@ -99,4 +77,72 @@ unconstrained fn transfer_public_to_commitment_failure_not_an_owner() {
             0,
         ),
     );
+}
+
+/// Under an authwit the caller, not `from`, is the completer the commitment must designate.
+#[test]
+unconstrained fn transfer_public_to_commitment_on_behalf_of_other() {
+    let (env, token_contract_address, owner, recipient, proxy) =
+        utils::setup_and_mint_to_public_with_proxy();
+
+    let commitment = env.call_private(
+        recipient,
+        Token::at(token_contract_address).initialize_transfer_commitment(recipient, proxy),
+    );
+
+    let action = Token::at(token_contract_address).transfer_public_to_commitment(
+        owner,
+        commitment,
+        mint_amount,
+        0,
+    );
+    authwit_cheatcodes::add_public_authwit_from_call(env, owner, proxy, action);
+    env.call_public(
+        owner,
+        GenericProxy::at(proxy).forward_public_4(
+            action.target_contract,
+            action.selector,
+            action.args,
+        ),
+    );
+
+    utils::check_public_balance(env, token_contract_address, owner, 0 as u128);
+    utils::check_private_balance(env, token_contract_address, recipient, mint_amount);
+}
+
+/// Completion is not single use: a second completion succeeds and debits the payer again, but the recipient's wallet
+/// only discovers the first one. Pins the behaviour the README warns about.
+#[test]
+unconstrained fn transfer_public_to_commitment_twice_only_first_is_discovered() {
+    let (env, token_contract_address, owner, recipient) =
+        utils::setup_and_mint_to_public_without_minter(false);
+
+    let commitment = env.call_private(
+        recipient,
+        Token::at(token_contract_address).initialize_transfer_commitment(recipient, owner),
+    );
+
+    env.call_public(
+        owner,
+        Token::at(token_contract_address).transfer_public_to_commitment(
+            owner,
+            commitment,
+            100 as u128,
+            0,
+        ),
+    );
+    utils::check_private_balance(env, token_contract_address, recipient, 100 as u128);
+
+    env.call_public(
+        owner,
+        Token::at(token_contract_address).transfer_public_to_commitment(
+            owner,
+            commitment,
+            50 as u128,
+            0,
+        ),
+    );
+    utils::check_public_balance(env, token_contract_address, owner, mint_amount - 150);
+    utils::check_private_balance(env, token_contract_address, recipient, 100 as u128);
+    utils::check_total_supply(env, token_contract_address, mint_amount);
 }

@@ -274,15 +274,15 @@ unconstrained fn transfer_private_to_private_failure_on_behalf_of_other_wrong_ca
 
 #[test]
 unconstrained fn transfer_private_to_private_per_id_isolation() {
-    // Owner holds (idX, a),(idY, b) private; transferring idX leaves idY intact
-    // (constrained select(token_id == idX)).
+    // The other id holds the larger note, so the DESC-sorted note getter would pick it first if the
+    // constrained `select(token_id == id)` were missing.
     let (env, multitoken_contract_address, owner, recipient, minter) =
         utils::setup_with_minter(false);
 
     let id_x: Field = 1;
     let id_y: Field = 2;
-    let amount_x: u128 = 5_000;
-    let amount_y: u128 = 3_000;
+    let amount_x: u128 = 1_000;
+    let amount_y: u128 = 5_000;
     utils::mint_to_private(
         env,
         multitoken_contract_address,
@@ -300,7 +300,7 @@ unconstrained fn transfer_private_to_private_per_id_isolation() {
         minter,
     );
 
-    let transfer_amount: u128 = 2_000;
+    let transfer_amount: u128 = amount_x;
     env.call_private(
         owner,
         MultiToken::at(multitoken_contract_address).transfer_private_to_private(
@@ -313,6 +313,7 @@ unconstrained fn transfer_private_to_private_per_id_isolation() {
     );
 
     utils::check_private_balance(env, multitoken_contract_address, owner, id_y, amount_y);
+    utils::check_private_balance(env, multitoken_contract_address, recipient, id_y, 0);
     utils::check_private_balance(
         env,
         multitoken_contract_address,
@@ -326,6 +327,25 @@ unconstrained fn transfer_private_to_private_per_id_isolation() {
         recipient,
         id_x,
         transfer_amount,
+    );
+}
+
+#[test(should_fail_with = "Balance too low")]
+unconstrained fn transfer_private_to_private_cannot_spend_another_id() {
+    let (env, multitoken_contract_address, owner, recipient, minter) =
+        utils::setup_with_minter(false);
+
+    utils::mint_to_private(env, multitoken_contract_address, owner, 2, 5_000, minter);
+
+    env.call_private(
+        owner,
+        MultiToken::at(multitoken_contract_address).transfer_private_to_private(
+            owner,
+            recipient,
+            1,
+            1,
+            0,
+        ),
     );
 }
 

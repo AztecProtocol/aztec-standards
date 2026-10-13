@@ -20,9 +20,9 @@ use aztec::{
     },
 };
 
-// MultiTokenNote supports partial notes, i.e. the ability to create an incomplete note in private, hiding certain
-// values (the owner, storage slot and randomness), and then completing the note in public with the ones missing (the
-// token id and value). Partial notes are being actively developed and are not currently fully supported via macros,
+// MultiTokenNote supports partial notes, i.e. the ability to create an incomplete note in private, hiding the owner
+// and randomness, and then completing it, in public or private, with the storage slot, token id and value, which become
+// public. Partial notes are being actively developed and are not currently fully supported via macros,
 // and so we rely on the #[custom_note] macro to implement it manually, resulting in some boilerplate. This is expected
 // to be unnecessary once macro support is expanded.
 //
@@ -95,16 +95,17 @@ impl NoteHash for MultiTokenNote {
 }
 
 impl MultiTokenNote {
-    /// Creates a partial note that will hide the owner and storage slot but not the token id and value, since the note
-    /// will be later completed in public. This is a powerful technique for scenarios in which the token id or value
+    /// Creates a partial note that will hide the owner but not the storage slot, token id or value, which are published
+    /// when the note is completed. This is a powerful technique for scenarios in which the token id or value
     /// cannot be known in private (e.g. because they depend on some public state).
     ///
     /// This function inserts a partial note validity commitment into the nullifier tree to be later on able to verify
     /// that the partial note and completer are legitimate. See function docs of `compute_validity_commitment` for more
     /// details.
     ///
-    /// Each partial note should only be used once, since otherwise multiple notes would be linked together and known to
-    /// belong to the same owner.
+    /// Each partial note should be completed at most once. Nothing enforces it, but the owner's wallet processes only
+    /// the first completion log it finds, so reuse can leave the other payments undiscovered (and links the
+    /// completions to the same owner).
     ///
     /// As part of the partial note creation process, a log will be sent to `recipient` so that they can discover the
     /// note. `recipient` will typically be the same as `owner`.
@@ -178,10 +179,10 @@ impl NoteType for MultiTokenPartialNotePrivateLogContent {
     }
 }
 
-/// A partial instance of a MultiTokenNote. This value represents a private commitment to the owner, randomness and
-/// storage slot, but the token id and value fields have not yet been set. A partial note can be completed in public
-/// with the `complete` function (revealing the token id and value to the public), resulting in a MultiTokenNote that
-/// can be used like any other one.
+/// A partial instance of a MultiTokenNote. This value represents a private commitment to the owner and randomness (the
+/// storage slot is folded into the completed note hash, not the commitment), but the token id and value fields have not
+/// yet been set. It can be completed with `complete` (public) or `complete_from_private`, both revealing the token id
+/// and value, resulting in a MultiTokenNote that can be used like any other one.
 #[derive(Packable, Serialize, Deserialize, Eq)]
 pub struct PartialMultiTokenNote {
     pub commitment: Field,
@@ -189,6 +190,10 @@ pub struct PartialMultiTokenNote {
 
 impl PartialMultiTokenNote {
     /// Completes the partial note, creating a new note that can be used like any other MultiTokenNote.
+    ///
+    /// The validity commitment only proves that this contract created this exact partial note designating `completer`.
+    /// `storage_slot`, `token_id` and `value` are not bound by it, and nothing checks that `completer` is the caller:
+    /// contracts must pass the right slot and authenticate the caller themselves, typically by passing `msg_sender()`.
     pub fn complete(
         self,
         context: PublicContext,
@@ -206,8 +211,7 @@ impl PartialMultiTokenNote {
         // completable token id.
         assert(value != 0, "Cannot complete a PartialMultiTokenNote with a value of 0");
 
-        // We verify that the partial note we're completing is valid (i.e. completer is correct, it uses the correct
-        // state variable's storage slot, and it is internally consistent).
+        // We verify that `completer` matches the completer designated when this contract created this partial note.
         let validity_commitment = self.compute_validity_commitment(completer);
         // Safety: we're using the existence of the nullifier as proof of the contract having validated the partial
         // note's preimage, which is safe.
@@ -227,9 +231,10 @@ impl PartialMultiTokenNote {
         context.push_note_hash(self.compute_complete_note_hash(storage_slot, token_id, value));
     }
 
-    /// Completes the partial note, creating a new note that can be used like any other MultiTokenNote. Same as
-    /// `complete` but works from private context, requiring the validity commitment to have been created in a prior
-    /// settled transaction.
+    /// Completes the partial note from private execution. The validity commitment for the designated completer is
+    /// proven against the block the transaction is anchored to, so the partial note must come from an earlier block.
+    /// Unlike `complete`, a zero value is accepted. The id and value are still published, through an unencrypted log
+    /// on the private-log channel.
     pub fn complete_from_private(
         self,
         context: &mut PrivateContext,
@@ -238,8 +243,7 @@ impl PartialMultiTokenNote {
         token_id: Field,
         value: u128,
     ) {
-        // We verify that the partial note we're completing is valid (i.e. completer is correct, it uses the correct
-        // state variable's storage slot, and it is internally consistent).
+        // We verify that `completer` matches the completer designated when this contract created this partial note.
         let validity_commitment = self.compute_validity_commitment(completer);
 
         let siloed_validity_commitment =
@@ -263,10 +267,9 @@ impl PartialMultiTokenNote {
         context.push_note_hash(self.compute_complete_note_hash(storage_slot, token_id, value));
     }
 
-    /// Computes a validity commitment for this partial note. The commitment cryptographically binds the note's private
-    /// data with the designated completer address. When the note is later completed in public execution, we can load
-    /// this commitment from the nullifier tree and verify that both the partial note (e.g. that the storage slot
-    /// corresponds to the correct owner, and that we're using the correct state variable) and completer are legitimate.
+    /// Computes a validity commitment for this partial note. It binds the note's private content to the designated
+    /// completer; completion looks it up in the nullifier tree to verify that this contract created this exact partial
+    /// note designating that completer.
     pub fn compute_validity_commitment(self, completer: AztecAddress) -> Field {
         poseidon2_hash_with_separator(
             [self.commitment, completer.to_field()],

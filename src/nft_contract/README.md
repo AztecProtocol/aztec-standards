@@ -16,18 +16,29 @@ The contract emits a public `Transfer { from, to, token_id }` event on every own
 | Burn from private | `Transfer(PRIVATE_ADDRESS, 0x0, tokenId)` |
 | Public-to-public | `Transfer(from, to, tokenId)` |
 | Public-to-private | `Transfer(from, PRIVATE_ADDRESS, tokenId)` |
-| Private-to-public | `Transfer(PRIVATE_ADDRESS, to, tokenId)` |
+| Private-to-public (with or without commitment) | `Transfer(PRIVATE_ADDRESS, to, tokenId)` |
 | Public-to-commitment | `Transfer(from, PRIVATE_ADDRESS, tokenId)` |
 | Private-to-private | _(no public events)_ |
-| Private-to-commitment | _(no public events)_ |
+| Private-to-commitment | _(no public events; the token id is still published, see [Commitments](#commitments))_ |
 
 **Sentinel values:** `0x0` denotes mint origin (`from`) or burn destination (`to`), following ERC-721. `PRIVATE_ADDRESS` (sha224 of `"PRIVATE_ADDRESS"`) denotes the private side of an ownership change when the counterpart cannot be revealed.
+
+## Commitments
+
+A commitment is a partial note: a private NFT note whose owner is fixed when it is created and whose token id is filled in later. Completing it needs only the commitment, not the owner's address, and does not publish the owner. That is privacy from chain observers, not from the completer: a contract that creates a return commitment knows whom it returns the token to.
+
+- **Create.** `initialize_transfer_commitment(to, completer)` returns a commitment owned by `to`. `to` learns about it through an unconstrained message, so `to`, or a contract acting for it, should be the caller. `transfer_private_to_public_with_commitment` returns one owned by `from`, so a contract that takes custody of the token publicly can hand it back privately.
+- **Complete.** Only `completer` can, as `msg_sender` of `transfer_public_to_commitment` or `transfer_private_to_commitment`. Under an authwit that is the caller, not `from`. The completer picks the token id, which for an NFT is the whole value: a commitment is a request, not a guarantee.
+- **What is bound.** The commitment binds the owner and randomness, and the validity nullifier pushed at creation binds the completer. The token id and storage slot are only fixed by the completed note hash.
+- **What is public.** Completing publishes the storage slot and the token id in a log tagged by the commitment, including from `transfer_private_to_commitment`, which emits it unencrypted through the private-log channel. No completion publishes the owner's address, but public completion exposes the commitment and the completer (the owner itself, when it completes), and from those anyone can recompute the validity nullifier and find the transaction that created the commitment, with whatever it reveals: its fee payer, for one, which in the documented flows is the owner's account. That links the transfer to the owner. Private completion exposes neither. The private path does not publish the sender either, but a token id is unique and is published each time it crosses domains, so earlier holders can often be inferred.
+- **Timing.** `transfer_private_to_commitment` proves the validity nullifier against the block its transaction is anchored to, so the commitment must come from an earlier block. Public completion also works in the transaction that created it.
+- **Complete at most once.** Nothing stops a second completion with another token, but the owner's wallet processes only the first completion log it finds, so reuse can leave the other token undiscovered, not necessarily the later one, and out of reach of normal wallet discovery.
 
 ## Storage Fields
 
 - `name: FieldCompressedString`: NFT collection name (compressed).
 - `symbol: FieldCompressedString`: NFT collection symbol (compressed).
-- `private_nfts: Map<AztecAddress, PrivateSet<NFTNote>>`: Private NFT ownership per account.
+- `private_nfts: Owned<PrivateSet<NFTNote>>`: Private NFT ownership; `private_nfts.at(owner)` is one account's note set.
 - `nft_exists: Map<Field, bool>`: Mapping from token ID to existence status.
 - `public_owners: Map<Field, AztecAddress>`: Public ownership mapping from token ID to owner address.
 - `minter: AztecAddress`: Authorized minter address.
@@ -70,13 +81,13 @@ fn transfer_private_to_public(
 
 ### transfer_private_to_public_with_commitment
 ```rust
-/// @notice Transfers token by id from private owner to a public owner with a commitment
-/// @dev Removes token from private owner, enqueues a public call to update the public owner, and returns a commitment
-/// @param from The address of the sender
-/// @param to The address of the recipient
+/// @notice Transfers token by id from private owner to a public owner, with a return commitment for `from`
+/// @dev The commitment is owned by `from` and completable only by `msg_sender`. See Commitments above.
+/// @param from The address of the sender, and the owner of the commitment
+/// @param to The address of the new public owner
 /// @param token_id The id of the token to transfer
 /// @param _nonce The nonce used for authwit
-/// @return commitment The partial nft note utilized for the transfer commitment (privacy entrance)
+/// @return commitment The return commitment owned by `from`
 #[private]
 fn transfer_private_to_public_with_commitment(
     from: AztecAddress,
@@ -105,11 +116,12 @@ fn transfer_private_to_private(
 
 ### transfer_private_to_commitment
 ```rust
-/// @notice Transfers token by id from private owner to the recipient commitment (recipient must create a commitment first)
-/// @dev Removes token by id from private owner, and enqueues a public call to complete the commitment
+/// @notice Transfers token by id from private owner to a commitment, completing it in private
+/// @dev `msg_sender` must be the commitment's completer, and the commitment must come from an earlier block.
+///      The token id is published.
 /// @param from The address of the sender
 /// @param token_id The id of the token to transfer
-/// @param commitment The commitment to use for the transfer
+/// @param commitment The commitment to complete
 /// @param _nonce The nonce used for authwit
 #[private]
 fn transfer_private_to_commitment(
@@ -139,11 +151,11 @@ fn transfer_public_to_private(
 
 ### initialize_transfer_commitment
 ```rust
-/// @notice Initializes a transfer commitment to be used for transfers
-/// @dev Returns a partial nft note that can be used to execute transfers
-/// @param to The address of the recipient
-/// @param completer The address allowed to complete the partial note
-/// @return commitment The partial nft note utilized for the transfer commitment (privacy entrance)
+/// @notice Creates a commitment owned by `to` that only `completer` can complete
+/// @dev See Commitments above.
+/// @param to The owner of the commitment
+/// @param completer The only address allowed to complete the commitment
+/// @return commitment The commitment
 #[private]
 fn initialize_transfer_commitment(to: AztecAddress, completer: AztecAddress) -> Field { /* ... */ }
 ```
@@ -161,7 +173,7 @@ fn mint_to_private(to: AztecAddress, token_id: Field) { /* ... */ }
 ### burn_private
 ```rust
 /// @notice Burns a token from a private address
-/// @dev Asserts that the caller is token owner, removes private token owner, and enqueues a public call to burn token
+/// @dev Removes the token from `from`'s private notes and enqueues a public call to burn it
 /// @param from The address of the owner
 /// @param token_id The id of the token to burn
 /// @param _nonce The nonce used for authwit
@@ -184,7 +196,7 @@ fn cancel_authwit(inner_hash: Field) { /* ... */ }
 ### transfer_public_to_public
 ```rust
 /// @notice Transfers a token from one public owner to another public owner
-/// @dev Public call that asserts that the caller is the token owner, and updates the public owner
+/// @dev Asserts `from` owns the token publicly and updates the public owner
 /// @param from The address of the sender
 /// @param to The address of the recipient
 /// @param token_id The id of the token to transfer
@@ -200,11 +212,12 @@ fn transfer_public_to_public(
 
 ### transfer_public_to_commitment
 ```rust
-/// @notice Transfers a token to a commitment
-/// @dev Public call that asserts that the caller is the token owner, and updates the public owner, and completes the commitment
+/// @notice Transfers a token from public owner to a commitment
+/// @dev Asserts `from` owns the token publicly. `msg_sender` must be the commitment's completer: the caller, which is
+///      not `from` under an authwit.
 /// @param from The address of the sender
 /// @param token_id The id of the token to transfer
-/// @param commitment The commitment to use for the transfer
+/// @param commitment The commitment to complete
 /// @param _nonce The nonce used for authwit
 #[public]
 fn transfer_public_to_commitment(
@@ -228,7 +241,7 @@ fn mint_to_public(to: AztecAddress, token_id: Field) { /* ... */ }
 ### burn_public
 ```rust
 /// @notice Burns a token from a public address
-/// @dev Asserts that token exists and that the caller is token owner, removes public token owner, and burns token
+/// @dev Asserts `from` owns the token publicly, clears the public owner, and burns the token
 /// @param from The address of the owner
 /// @param token_id The id of the token to burn
 /// @param _nonce The nonce used for authwit

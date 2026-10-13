@@ -13,26 +13,64 @@ unconstrained fn nft_transfer_private_to_commitment_success() {
     // Verify initial ownership
     utils::assert_owns_private_nft(env, nft_contract_address, owner, token_id);
 
-    // Prepare commitment
+    // The recipient creates the commitment, naming the sender as its completer.
     let commitment = env.call_private(
-        owner,
+        recipient,
         NFT::at(nft_contract_address).initialize_transfer_commitment(recipient, owner),
     );
 
-    // Verify commitment is stored
-    utils::check_commitment_is_stored(env, nft_contract_address, commitment);
-
-    // Transfer NFT to commitment
     env.call_private(
         owner,
         NFT::at(nft_contract_address).transfer_private_to_commitment(owner, token_id, commitment, 0),
     );
 
-    // Verify NFT is removed from owner and in commitment
     utils::assert_private_nft_nullified(env, nft_contract_address, owner, token_id);
-    // NFT should be in recipient's private set
     utils::assert_owns_private_nft(env, nft_contract_address, recipient, token_id);
-    utils::check_commitment_is_stored(env, nft_contract_address, commitment);
+
+    // A note completed in private must be as spendable as any other.
+    env.call_private(
+        recipient,
+        NFT::at(nft_contract_address).transfer_private_to_private(recipient, owner, token_id, 0),
+    );
+    utils::assert_owns_private_nft(env, nft_contract_address, owner, token_id);
+    utils::assert_private_nft_nullified(env, nft_contract_address, recipient, token_id);
+}
+
+#[test(should_fail_with = "is reading an unknown nullifier")]
+unconstrained fn nft_transfer_private_to_commitment_wrong_completer_fail() {
+    let token_id = 10000;
+    let (env, nft_contract_address, owner, _, recipient) =
+        utils::setup_and_mint_to_private(false, token_id);
+
+    let commitment = env.call_private(
+        recipient,
+        NFT::at(nft_contract_address).initialize_transfer_commitment(recipient, recipient),
+    );
+
+    env.call_private(
+        owner,
+        NFT::at(nft_contract_address).transfer_private_to_commitment(owner, token_id, commitment, 0),
+    );
+}
+
+/// A validity nullifier is siloed under the contract that created the commitment, so another contract's commitment
+/// cannot be completed here, although Token, MultiToken and NFT compute the same validity commitment for it.
+#[test(should_fail_with = "is reading an unknown nullifier")]
+unconstrained fn nft_transfer_private_to_commitment_foreign_commitment_fail() {
+    let token_id = 10000;
+    let (mut env, nft_contract_address, owner, minter, recipient) =
+        utils::setup_and_mint_to_private(false, token_id);
+    let other_nft_contract_address = utils::deploy_nft_with_minter(&mut env, owner, minter);
+
+    let commitment = env.call_private(
+        recipient,
+        NFT::at(other_nft_contract_address).initialize_transfer_commitment(recipient, owner),
+    );
+
+    env.call_private(
+        owner,
+        NFT::at(nft_contract_address).transfer_private_to_commitment(owner, token_id, commitment, 0),
+    );
 }
 
 #[test]
@@ -45,16 +83,12 @@ unconstrained fn nft_transfer_private_to_commitment_authorized_success() {
     // Verify initial ownership
     utils::assert_owns_private_nft(env, nft_contract_address, owner, token_id);
 
-    // Prepare commitment with owner as completer (NFT contract uses `from` as completer, not msg_sender)
+    // The proxy calls on the owner's behalf, so the commitment must designate the proxy, not the owner.
     let commitment = env.call_private(
-        owner,
-        NFT::at(nft_contract_address).initialize_transfer_commitment(recipient, owner),
+        recipient,
+        NFT::at(nft_contract_address).initialize_transfer_commitment(recipient, proxy),
     );
 
-    // Verify commitment is stored
-    utils::check_commitment_is_stored(env, nft_contract_address, commitment);
-
-    // Create transfer call interface with non-zero nonce
     let transfer_call_interface = NFT::at(nft_contract_address).transfer_private_to_commitment(
         owner,
         token_id,
@@ -75,11 +109,8 @@ unconstrained fn nft_transfer_private_to_commitment_authorized_success() {
         ),
     );
 
-    // Verify NFT is removed from owner and in commitment
     utils::assert_private_nft_nullified(env, nft_contract_address, owner, token_id);
-    // NFT should be in recipient's private set
     utils::assert_owns_private_nft(env, nft_contract_address, recipient, token_id);
-    utils::check_commitment_is_stored(env, nft_contract_address, commitment);
 }
 
 #[test(should_fail_with = "nft not found")]

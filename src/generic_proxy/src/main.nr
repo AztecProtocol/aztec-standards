@@ -3,6 +3,7 @@ use aztec::macros::aztec;
 #[aztec]
 pub contract GenericProxy {
     use aztec::{
+        context::gas::GasOpts,
         macros::functions::external,
         protocol::{abis::function_selector::FunctionSelector, address::AztecAddress},
     };
@@ -41,6 +42,11 @@ pub contract GenericProxy {
         let returns: Field =
             self.context.call_private_function(target, selector, args).get_preimage();
         returns
+    }
+
+    #[external("public")]
+    fn forward_public_4(target: AztecAddress, selector: FunctionSelector, args: [Field; 4]) {
+        let _ = self.context.call_public_function(target, selector, args, GasOpts::default());
     }
 
     #[external("private")]

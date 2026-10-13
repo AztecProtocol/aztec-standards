@@ -1,4 +1,5 @@
 use crate::NFT;
+use crate::types::nft_note::PartialNFTNote;
 use aztec::{
     protocol::{address::AztecAddress, storage::map::derive_storage_slot_in_map},
     test::helpers::test_environment::TestEnvironment,
@@ -144,15 +145,20 @@ pub unconstrained fn owns_private_nft(
     nft_found
 }
 
-pub unconstrained fn check_commitment_is_stored(
+/// Asserts the commitment's validity nullifier designates `completer`.
+pub unconstrained fn check_commitment_completer(
     env: TestEnvironment,
     nft_contract_address: AztecAddress,
     commitment: Field,
+    completer: AztecAddress,
 ) {
-    env.public_context_at(nft_contract_address, |context| {
-        let stored = context.storage_read(commitment);
-        assert_eq(stored, true);
-    });
+    let validity_commitment = PartialNFTNote { commitment }.compute_validity_commitment(completer);
+    assert(
+        env.public_context(|context| {
+            context.nullifier_exists_unsafe(validity_commitment, nft_contract_address)
+        }),
+        "validity nullifier should exist",
+    );
 }
 
 // While authwits authorize a contract to perform an action, spending private notes still requires

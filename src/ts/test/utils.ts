@@ -9,6 +9,7 @@ import { TxHash, type ExecutionPayload, type TxExecutionRequest } from '@aztec-l
 import { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
 import { registerInitialLocalNetworkAccountsInWallet } from '@aztec-labs/wallets/testing';
 import { PublicKeys } from '@aztec-labs/aztec.js/keys';
+import { type PublicLog } from '@aztec-labs/stdlib/logs';
 
 import {
   DeployOptions,
@@ -499,7 +500,7 @@ export async function initializeTransferCommitment(
 /**
  * Initializes a transfer commitment for an NFT
  * @param nft - The token contract instance.
- * @param caller - The wallet that will interact with the token contract.
+ * @param caller - The account that sends the transaction; the recipient, or a contract acting for it, per the README.
  * @param to - The address of the recipient.
  * @param completer - The address allowed to complete the partial note.
  * @returns Partial note commitment
@@ -507,10 +508,10 @@ export async function initializeTransferCommitment(
 export async function initializeTransferCommitmentNFT(
   nft: NFTContract,
   caller: AztecAddress,
-  to: AccountManager,
+  to: AztecAddress,
   completer: AztecAddress,
 ): Promise<bigint> {
-  const interaction = nft.methods.initialize_transfer_commitment(to.address, completer);
+  const interaction = nft.methods.initialize_transfer_commitment(to, completer);
   return proveExtractAndSendCommitment(interaction, nft.wallet, caller);
 }
 
@@ -679,6 +680,19 @@ async function getAllPublicEvents<T>(
     afterEvent = page.nextCursor;
   } while (afterEvent);
   return all;
+}
+
+/**
+ * Returns every public log (events and raw logs alike) that `contractAddress` emitted in a transaction.
+ *
+ * @param txHash - The transaction hash to read the effect of.
+ * @param contractAddress - The contract whose logs to keep.
+ * @returns The contract's public logs, in emission order.
+ */
+export async function getPublicLogsOf(txHash: TxHash, contractAddress: AztecAddress): Promise<PublicLog[]> {
+  const effect = await node.getTxEffect(txHash);
+  if (!effect) throw new Error(`No tx effect for ${txHash}`);
+  return effect.data.publicLogs.filter((log) => log.contractAddress.equals(contractAddress));
 }
 
 /**
