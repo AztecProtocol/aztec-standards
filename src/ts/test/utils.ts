@@ -9,6 +9,7 @@ import { TxHash } from '@aztec-labs/aztec.js/tx';
 import { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
 import { registerInitialLocalNetworkAccountsInWallet } from '@aztec-labs/wallets/testing';
 import { PublicKeys } from '@aztec-labs/stdlib/keys';
+import { type PublicLog } from '@aztec-labs/stdlib/logs';
 
 import {
   DeployOptions,
@@ -689,7 +690,7 @@ async function getAllPublicEvents<T>(
  * @param contractAddress - The contract whose logs to keep.
  * @returns The contract's public logs, in emission order.
  */
-export async function getPublicLogsOf(txHash: TxHash, contractAddress: AztecAddress) {
+export async function getPublicLogsOf(txHash: TxHash, contractAddress: AztecAddress): Promise<PublicLog[]> {
   const effect = await node.getTxEffect(txHash);
   if (!effect) throw new Error(`No tx effect for ${txHash}`);
   return effect.data.publicLogs.filter((log) => log.contractAddress.equals(contractAddress));
