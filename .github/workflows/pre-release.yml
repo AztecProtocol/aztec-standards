@@ -8,6 +8,7 @@ jobs:
     uses: AztecProtocol/aztec-ci-actions/.github/workflows/pre-release.yml@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
     with:
       package-dir: export/@aztec-foundation/aztec-standards
-      runner: ubuntu-latest
+      # Pinned so the OS upgrade is deliberate: the floating latest label moves to Ubuntu 26.04 from 2026-10-19.
+      runner: ubuntu-24.04
     permissions:
       contents: write

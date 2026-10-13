@@ -32,14 +32,15 @@ jobs:
   # ══════════════════════════════════════════════════════════════════════════════
   build:
     name: Build
-    runs-on: ubuntu-latest
+    # Pinned so the OS upgrade is deliberate: the floating latest label moves to Ubuntu 26.04 from 2026-10-19.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
       contents: read # checkout (the tag already exists)
 
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -95,7 +96,7 @@ jobs:
     # Single environment for every tag — see the note at the top of this file.
     # Prereleases pay one approval click; that is the cost of the npm-side pin.
     environment: Production
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -112,7 +113,7 @@ jobs:
           path: npm-tarball
 
       - name: Setup Node.js for NPM publish
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           # npm Trusted Publishing requires Node >=22.14.0 and npm >=11.5.1.
           node-version: '22.14.0'
@@ -211,19 +212,19 @@ jobs:
   smoke:
     name: Smoke-test published package
     needs: publish
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read # checkout, for the smoke script
 
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22.14.0'
 
