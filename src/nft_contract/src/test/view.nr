@@ -3,7 +3,7 @@ use crate::test::utils;
 use compressed_string::FieldCompressedString;
 
 #[test]
-unconstrained fn nft_name_is_set() {
+unconstrained fn public_get_name() {
     let (env, nft_contract_address, _, _, _) = utils::setup_with_minter(false);
 
     let name = env.view_public(NFT::at(nft_contract_address).public_get_name());
@@ -12,7 +12,7 @@ unconstrained fn nft_name_is_set() {
 }
 
 #[test]
-unconstrained fn nft_symbol_is_set() {
+unconstrained fn public_get_symbol() {
     let (env, nft_contract_address, _, _, _) = utils::setup_with_minter(false);
 
     let symbol = env.view_public(NFT::at(nft_contract_address).public_get_symbol());

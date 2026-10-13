@@ -4,7 +4,7 @@ use aztec::{protocol::address::AztecAddress, test::helpers::authwit as authwit_c
 use generic_proxy::GenericProxy;
 
 #[test]
-unconstrained fn nft_transfer_private_to_public_self_success() {
+unconstrained fn transfer_private_to_public_self() {
     // Setup and mint NFT to owner in private state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, _) =
@@ -28,7 +28,7 @@ unconstrained fn nft_transfer_private_to_public_self_success() {
 }
 
 #[test]
-unconstrained fn nft_transfer_private_to_public_authorized_success() {
+unconstrained fn transfer_private_to_public_authorized() {
     // Setup with account contracts (needed for authwits) and mint NFT to owner
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient, proxy) =
@@ -63,7 +63,7 @@ unconstrained fn nft_transfer_private_to_public_authorized_success() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash")]
-unconstrained fn nft_transfer_private_to_public_unauthorized_fail() {
+unconstrained fn transfer_private_to_public_failure_unauthorized() {
     // Setup with account contracts for proper authorization testing
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient, proxy) =
@@ -85,7 +85,7 @@ unconstrained fn nft_transfer_private_to_public_unauthorized_fail() {
 }
 
 #[test(should_fail_with = "nft not found")]
-unconstrained fn nft_transfer_private_to_public_non_existent_nft_fail() {
+unconstrained fn transfer_private_to_public_failure_non_existent_nft() {
     // Setup environment but don't mint any NFT
     let (env, nft_contract_address, owner, _, recipient) = utils::setup_with_minter(false);
     let non_existent_token_id = 12345;
@@ -103,7 +103,7 @@ unconstrained fn nft_transfer_private_to_public_non_existent_nft_fail() {
 }
 
 #[test(should_fail_with = "nft not found")]
-unconstrained fn nft_transfer_private_to_public_already_public_fail() {
+unconstrained fn transfer_private_to_public_failure_already_public() {
     // Setup and mint NFT to owner in public state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =

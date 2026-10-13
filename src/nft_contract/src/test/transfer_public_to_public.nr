@@ -3,7 +3,7 @@ use crate::test::utils;
 use aztec::test::helpers::authwit as authwit_cheatcodes;
 
 #[test]
-unconstrained fn nft_transfer_public_to_public_success() {
+unconstrained fn transfer_public_to_public() {
     // Setup and mint NFT to owner
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -20,7 +20,7 @@ unconstrained fn nft_transfer_public_to_public_success() {
 }
 
 #[test]
-unconstrained fn nft_transfer_public_to_public_self_success() {
+unconstrained fn transfer_public_to_public_self() {
     // Setup and mint NFT to owner
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, _) = utils::setup_and_mint_to_public(false, token_id);
@@ -36,7 +36,7 @@ unconstrained fn nft_transfer_public_to_public_self_success() {
 }
 
 #[test]
-unconstrained fn nft_transfer_public_to_public_authorized_success() {
+unconstrained fn transfer_public_to_public_authorized() {
     // Setup with account contracts (needed for authwits) and mint NFT to owner
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -65,7 +65,7 @@ unconstrained fn nft_transfer_public_to_public_authorized_success() {
 }
 
 #[test(should_fail_with = "caller is not owner")]
-unconstrained fn nft_transfer_public_to_public_non_existent_fail() {
+unconstrained fn transfer_public_to_public_failure_non_existent() {
     // Setup environment but don't mint the NFT
     let (env, nft_contract_address, owner, _, recipient) = utils::setup_with_minter(false);
     let non_existent_token_id = 12345;
@@ -83,7 +83,7 @@ unconstrained fn nft_transfer_public_to_public_non_existent_fail() {
 }
 
 #[test(should_fail_with = "unauthorized")]
-unconstrained fn nft_transfer_public_to_public_unauthorized_fail() {
+unconstrained fn transfer_public_to_public_failure_unauthorized() {
     // Setup with account contracts for proper authorization testing
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -101,7 +101,7 @@ unconstrained fn nft_transfer_public_to_public_unauthorized_fail() {
 }
 
 #[test(should_fail_with = "unauthorized")]
-unconstrained fn nft_transfer_public_to_public_wrong_authwit_fail() {
+unconstrained fn transfer_public_to_public_failure_wrong_authwit() {
     // Setup with account contracts for proper authorization testing
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =

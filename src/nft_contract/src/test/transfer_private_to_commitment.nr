@@ -4,7 +4,7 @@ use aztec::test::helpers::authwit as authwit_cheatcodes;
 use generic_proxy::GenericProxy;
 
 #[test]
-unconstrained fn nft_transfer_private_to_commitment_success() {
+unconstrained fn transfer_private_to_commitment() {
     // Setup and mint NFT to owner in private state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
@@ -37,7 +37,7 @@ unconstrained fn nft_transfer_private_to_commitment_success() {
 }
 
 #[test(should_fail_with = "is reading an unknown nullifier")]
-unconstrained fn nft_transfer_private_to_commitment_wrong_completer_fail() {
+unconstrained fn transfer_private_to_commitment_failure_wrong_completer() {
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =
         utils::setup_and_mint_to_private(false, token_id);
@@ -56,7 +56,7 @@ unconstrained fn nft_transfer_private_to_commitment_wrong_completer_fail() {
 /// A validity nullifier is siloed under the contract that created the commitment, so another contract's commitment
 /// cannot be completed here, although Token, MultiToken and NFT compute the same validity commitment for it.
 #[test(should_fail_with = "is reading an unknown nullifier")]
-unconstrained fn nft_transfer_private_to_commitment_foreign_commitment_fail() {
+unconstrained fn transfer_private_to_commitment_failure_foreign_commitment() {
     let token_id = 10000;
     let (mut env, nft_contract_address, owner, minter, recipient) =
         utils::setup_and_mint_to_private(false, token_id);
@@ -74,7 +74,7 @@ unconstrained fn nft_transfer_private_to_commitment_foreign_commitment_fail() {
 }
 
 #[test]
-unconstrained fn nft_transfer_private_to_commitment_authorized_success() {
+unconstrained fn transfer_private_to_commitment_authorized() {
     // Setup with account contracts and mint NFT to owner
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient, proxy) =
@@ -114,7 +114,7 @@ unconstrained fn nft_transfer_private_to_commitment_authorized_success() {
 }
 
 #[test(should_fail_with = "nft not found")]
-unconstrained fn nft_transfer_private_to_commitment_non_existent_fail() {
+unconstrained fn transfer_private_to_commitment_failure_non_existent() {
     // Setup but don't mint any NFT
     let (env, nft_contract_address, owner, _, recipient) = utils::setup_with_minter(false);
     let non_existent_token_id = 12345;
@@ -138,7 +138,7 @@ unconstrained fn nft_transfer_private_to_commitment_non_existent_fail() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash")]
-unconstrained fn nft_transfer_private_to_commitment_unauthorized_fail() {
+unconstrained fn transfer_private_to_commitment_failure_unauthorized() {
     // Setup with account contracts
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient, proxy) =
@@ -170,7 +170,7 @@ unconstrained fn nft_transfer_private_to_commitment_unauthorized_fail() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash")]
-unconstrained fn nft_transfer_private_to_commitment_wrong_authwit_fail() {
+unconstrained fn transfer_private_to_commitment_failure_wrong_authwit() {
     // Setup with account contracts
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient, proxy) =
@@ -210,7 +210,7 @@ unconstrained fn nft_transfer_private_to_commitment_wrong_authwit_fail() {
 }
 
 #[test(should_fail_with = "nft not found")]
-unconstrained fn nft_transfer_private_to_commitment_public_nft_fail() {
+unconstrained fn transfer_private_to_commitment_failure_public_nft() {
     // Setup and mint NFT to owner in public state
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient) =

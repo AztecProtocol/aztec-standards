@@ -6,7 +6,7 @@ use generic_proxy::GenericProxy;
 
 /// Under an authwit the caller, not `from`, is the completer the commitment must designate.
 #[test]
-unconstrained fn nft_transfer_public_to_commitment_authorized_success() {
+unconstrained fn transfer_public_to_commitment_authorized() {
     let token_id = 10000;
     let (env, nft_contract_address, owner, _, recipient, proxy) =
         utils::setup_and_mint_to_public_with_proxy(token_id);
@@ -34,7 +34,7 @@ unconstrained fn nft_transfer_public_to_commitment_authorized_success() {
 
 /// Public completion checks the validity nullifier under this contract's address too.
 #[test(should_fail_with = "Invalid partial note or completer")]
-unconstrained fn nft_transfer_public_to_commitment_foreign_commitment_fail() {
+unconstrained fn transfer_public_to_commitment_failure_foreign_commitment() {
     let token_id = 10000;
     let (mut env, nft_contract_address, owner, minter, recipient) =
         utils::setup_and_mint_to_public(false, token_id);
