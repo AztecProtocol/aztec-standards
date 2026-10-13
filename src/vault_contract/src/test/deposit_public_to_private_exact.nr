@@ -271,6 +271,7 @@ unconstrained fn deposit_public_to_private_exact_on_behalf_of_other() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(true);
+    let proxy = env.deploy("@generic_proxy/GenericProxy").without_initializer();
 
     // Mint some asset tokens to owner
     let deposit_amount: u128 = mint_amount;
@@ -286,27 +287,25 @@ unconstrained fn deposit_public_to_private_exact_on_behalf_of_other() {
         deposit_amount,
     );
 
-    // Authorize the recipient to call deposit_public_to_private_exact
+    // Authorize the proxy to call deposit_public_to_private_exact on behalf of owner
     // At the first deposit 1 share = 1 asset
     let min_shares = deposit_amount;
-    let deposit_public_to_private_exact_call_interface = Vault::at(vault_address)
-        .deposit_public_to_private_exact(owner, recipient, deposit_amount, min_shares, 0);
-    authwit_cheatcodes::add_private_authwit_from_call(
-        env,
+    let call_interface = Vault::at(vault_address).deposit_public_to_private_exact(
         owner,
         recipient,
-        deposit_public_to_private_exact_call_interface,
+        deposit_amount,
+        min_shares,
+        0,
     );
+    authwit_cheatcodes::add_private_authwit_from_call(env, owner, proxy, call_interface);
 
     // Deposit
     env.call_private(
         owner,
-        Vault::at(vault_address).deposit_public_to_private_exact(
-            owner,
-            recipient,
-            deposit_amount,
-            min_shares,
-            0,
+        GenericProxy::at(proxy).forward_private_5(
+            call_interface.target_contract,
+            call_interface.selector,
+            call_interface.args,
         ),
     );
 
