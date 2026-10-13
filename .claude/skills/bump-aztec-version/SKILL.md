@@ -45,7 +45,12 @@ find . -name Nargo.toml -not -path '*/node_modules/*'
 - protocol deps (escrow's `serde`): `git = "https://github.com/AztecProtocol/aztec-packages"` (no trailing
   slash — the same string aztec-nr's own `protocol_types` dep uses), same tag,
   `directory = "noir-projects/fnd/noir-protocol-circuits/crates/serde"`.
-- **Do NOT touch** other deps (e.g. `sha512`, `bignum`) — they version independently.
+- **Do NOT touch** other deps: `bignum` versions independently, and `sha512` tracks upstream `master` (it
+  has no tags). Instead refresh its entry in `noir-dep-revisions.txt`: if
+  `git ls-remote https://github.com/noir-lang/sha512 refs/heads/master` no longer matches it, review the
+  upstream diff before updating the SHA. Escrow key derivation hashes with it, so the `test_logic_contract`
+  key-derivation vectors must still pass, and any change to the compiled `Escrow`/`TestLogic` artifacts
+  (function bytecode, verification keys, class ids) must be called out.
 
 ## Step 2 — bump the npm deps (`package.json`)
 - Every `@aztec-labs/*` dependency and `@aztec-foundation/bb.js` → the npm version, **pinned exactly**: the
@@ -84,6 +89,8 @@ rg -n 'WalletWithInternals|as unknown as.*Wallet|scopesFrom\(' src benchmarks sc
 Run in order; stop and diagnose on the first failure:
 ```bash
 yarn ccc                     # clean + compile + codegen against the new deps
+yarn check:noir-deps         # cached git deps match noir-dep-revisions.txt; nargo never re-fetches, so on a
+                             # stale clone delete it under ~/nargo and compile again
 yarn test:nr                 # Noir tests (aztec test) — alone on the host only: it runs against whatever
                              # listens on 8081; with other agents around use the free-port recipe in Gotchas
 yarn typecheck               # tsc --noEmit over src, scripts and benchmarks (CI runs it too)
