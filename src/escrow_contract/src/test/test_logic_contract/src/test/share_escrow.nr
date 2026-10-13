@@ -16,7 +16,7 @@ unconstrained fn share_escrow_success() {
     let logic = logic_utils::deploy_logic(&mut env, escrow_class_id);
     let escrow = escrow_utils::deploy_escrow_with_secret(&mut env, 1, logic);
 
+    // The emitted `EscrowDetailsLogContent` is checked in src/ts/test/escrow.test.ts: aztec-nr exposes no TXE
+    // reader for private events (aztec-labs-eng/aztec-node#363).
     env.call_private(sender, TestLogic::at(logic).share_escrow(recipient, escrow, secret_key));
-
-    logic_utils::assert_escrow_details_private_event(logic, recipient, escrow, secret_key);
 }

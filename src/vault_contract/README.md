@@ -19,7 +19,7 @@ This contract follows the [AIP-4626: Tokenized Vault Standard](https://forum.azt
 > The AIP-4626 functionality of this contract is not yet production-ready. Use it at your own risk. Two known issues, neither currently scheduled for a fix:
 >
 > 1. **Reentrancy via a hooked asset token.** This contract's protection against reentrancy is the *order* of its operations (assets are taken in before shares are minted; shares are burned before assets are paid out), on the assumption that a token transfer is indivisible. It is not: when the asset token has an ARC-403 `auth_contract` configured, that contract is invoked *during* the transfer, before balances move, and can observe the vault mid-operation — the exact intermediate state the ordering is meant to exclude. Reading the share price at that point yields a value no completed operation would produce, which can be used to extract value belonging to other shareholders. **Only wrap an asset token whose `get_auth_contract()` is the zero address, or one whose authorization contract you fully trust.** Vaults over tokens with no hook configured are not affected.
-> 2. **Overflow in the asset↔share conversion** logic used on deposits and withdrawals, for sufficiently large inputs.
+> 2. **Capacity ceiling.** The share supply is a `u128`; with correctly configured tokens and no reentrancy, a deposit mints at most `vault_offset` shares per asset. A deposit that would push the supply past `2^128 - 1` reverts, but one can succeed while leaving supply above `2^128 - 1 - vault_offset` or total assets at `2^128 - 1`. Every conversion, withdrawals and redemptions included, then reverts while that state persists. From an empty vault that takes `floor((2^128 - 1) / vault_offset)` assets: the asset's entire possible supply with `vault_offset = 1`, a single unit once `vault_offset >= 2^127`. `max_deposit` and `max_issue` ignore this and always return `2^128 - 1`.
 
 ## Architecture
 
@@ -576,6 +576,7 @@ It is the **deployer's responsibility** to evaluate whether `offset = 1` provide
 - Likelihood of front-running or MEV
 - Whether the vault exposes methods where users supply both `assets` and `shares` (common for private flows where the exchange rate cannot be computed inside the private context)
 - The overall risk profile and value secured by the vault
+- Capacity: a larger offset mints more shares per asset into a `u128` supply, so it lowers the ceiling in known issue 2 above
 
 For a detailed analysis of virtual offsets as a mitigation strategy, see:
 https://www.openzeppelin.com/news/a-novel-defense-against-erc4626-inflation-attacks

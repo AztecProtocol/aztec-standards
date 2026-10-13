@@ -1,3 +1,4 @@
+pub mod conversion;
 pub mod test;
 
 use aztec::macros::aztec;
@@ -113,7 +114,7 @@ pub contract Vault {
         let to = self.address;
 
         // Assets could be donated to the vault's precomputed address before deployment, but such assets are
-        // ignored at this point to ensure the asset<>share conversion is 1:1 for the initial deposit.
+        // ignored at this point so the initial deposit mints exactly `vault_offset` shares per asset.
         let total_assets: u128 = 0;
         let total_supply: u128 = 0;
         let vault_offset = self.storage.vault_offset.read();
@@ -1451,7 +1452,6 @@ pub contract Vault {
     /// @param vault_offset The vault offset
     /// @param rounding The rounding direction (ROUND_UP or ROUND_DOWN)
     /// @return The equivalent amount of shares
-    // TODO: The multiplication `assets * (total_supply + vault_offset)` can overflow u128 for large values.
     #[contract_library_method]
     fn _convert_to_shares(
         assets: u128,
@@ -1460,13 +1460,14 @@ pub contract Vault {
         vault_offset: u128,
         rounding: bool,
     ) -> u128 {
-        let mul_term = assets * (total_supply + vault_offset);
-        let denominator = total_assets + 1;
-        let mut shares = mul_term / denominator;
-        if (rounding == ROUND_UP) & (mul_term % denominator > 0) {
-            shares = shares + 1;
-        }
-        shares
+        // `assets * (total_supply + vault_offset)` overflows u128 for large inputs; compute it in a
+        // 256-bit intermediate. Rounding is unchanged (see `conversion::mul_div`).
+        crate::conversion::mul_div(
+            assets,
+            total_supply + vault_offset,
+            total_assets + 1,
+            rounding == ROUND_UP,
+        )
     }
 
     /// @notice Converts an amount of shares to assets using the given exchange rate parameters
@@ -1476,7 +1477,6 @@ pub contract Vault {
     /// @param vault_offset The vault offset
     /// @param rounding The rounding direction (ROUND_UP or ROUND_DOWN)
     /// @return The equivalent amount of assets
-    // TODO: The multiplication `shares * (total_assets + 1)` can overflow u128 for large values.
     #[contract_library_method]
     fn _convert_to_assets(
         shares: u128,
@@ -1485,13 +1485,14 @@ pub contract Vault {
         vault_offset: u128,
         rounding: bool,
     ) -> u128 {
-        let mul_term = shares * (total_assets + 1);
-        let denominator = total_supply + vault_offset;
-        let mut assets = mul_term / denominator;
-        if (rounding == ROUND_UP) & (mul_term % denominator > 0) {
-            assets = assets + 1;
-        }
-        assets
+        // `shares * (total_assets + 1)` overflows u128 for large inputs; compute it in a 256-bit
+        // intermediate. Rounding is unchanged (see `conversion::mul_div`).
+        crate::conversion::mul_div(
+            shares,
+            total_assets + 1,
+            total_supply + vault_offset,
+            rounding == ROUND_UP,
+        )
     }
 
     /** ==========================================================

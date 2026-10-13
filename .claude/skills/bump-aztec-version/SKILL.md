@@ -54,7 +54,7 @@ find . -name Nargo.toml -not -path '*/node_modules/*'
 - `viem` stays the `npm:@aztec/viem@…` alias the SDK itself uses.
 - `config.aztecVersion` → the npm version (the `setup-aztec` CI action reads this to install the toolchain).
 - The package's own `version` is the *release* version — bump it too if this repo tracks aztec (it does), else leave.
-- **`@aztec-foundation/aztec-benchmark` is a separate package** (its own repo/release). Only bump it if a matching release exists; it declares the Aztec SDK as **peerDependencies**, so it must resolve to the same aztec version — mismatches cause duplicate-type errors (see Gotchas).
+- **`@aztec-foundation/aztec-benchmark` is a separate package** (its own repo/release). Only bump it if a matching release exists; it declares the Aztec SDK as **peerDependencies**, so it must resolve to the same aztec version — mismatches cause duplicate-type errors (see Gotchas). Move the devDependency and the two reusable-workflow pins (`pr-checks.yml`, `update-baseline.yml`) to the same release commit together.
 
 ## Step 3 — regenerate the lockfile + toolchain
 ```bash
@@ -86,7 +86,7 @@ Run in order; stop and diagnose on the first failure:
 yarn ccc                     # clean + compile + codegen against the new deps
 yarn test:nr                 # Noir tests (aztec test) — alone on the host only: it runs against whatever
                              # listens on 8081; with other agents around use the free-port recipe in Gotchas
-# typecheck src + scripts (+ benchmarks if the benchmark dep resolves) via a temp tsconfig with noEmit
+yarn typecheck               # tsc --noEmit over src, scripts and benchmarks (CI runs it too)
 yarn format:check
 yarn install --frozen-lockfile   # lockfile matches package.json
 yarn build                   # assembles export/<pkg>
@@ -129,9 +129,6 @@ When everything is green: commit, open a PR to `main`, let CI pass, merge. Then 
     message-signing/fallback keys, escrow addresses stopped matching. If `get_escrow`/derivation tests
     fail, diff the key-derivation constants/`PublicKeys` at the target ref and re-sync. Regenerate the
     hardcoded `get_test_vector` hashes.
-  - The escrow test crate's `utils.nr` duplicates the crate-private TXE oracle `aztec_txe_getPrivateEvents`.
-    Its return type must match the target's `aztec/src/test/helpers/txe_oracles.nr` exactly (v6:
-    `BoundedVec<BoundedVec<Field, 10>, 5>`; v5 returned a raw tuple).
   - NFT/MultiToken partial notes import aztec-nr domain separators; v6 moved
     `DOM_SEP__PARTIAL_NOTE_COMMITMENT` and `DOM_SEP__NOTE_COMPLETION_LOG_TAG` to `aztec::note::partial_note`.
 - **Removed CLI commands.** v6 dropped `aztec inspect-contract` (among others); check `scripts/` and
@@ -150,7 +147,12 @@ When everything is green: commit, open a PR to `main`, let CI pass, merge. Then 
   require their CI jobs to pass before calling the bump validated.
 - **CI Node floor.** The shared `aztec-ci-actions` `setup-aztec` action pins `setup-node` to 24.0.0, below
   the v6 installer's 24.12 floor. If CI fails installing the toolchain, that action needs a bump first.
-- **Benchmark peerDep / duplicate tree.** `aztec-benchmark` 5.0.1 declares `@aztec/aztec.js` and
-  `@aztec/wallets` `>=5 <6` as peers; on v6 yarn only warns. If `benchmarks/*.ts` typecheck shows
-  `_branding` / `.../aztec-benchmark/node_modules/@aztec…` errors, the benchmark pulled a *second* SDK
-  tree — it must be on a version whose SDK packages are `peerDependencies` matching this repo's version.
+- **Benchmark peerDep / duplicate tree.** `aztec-benchmark` 5.x peers `@aztec/*` `>=5 <6`; 6.0.0-rc.1 is
+  the first release with `@aztec-labs/*` peers. Yarn only warns about a mismatch and tsx doesn't
+  type-check, so run `yarn typecheck` (`tsconfig.json` includes `benchmarks/`) and then the benchmarks
+  themselves; `_branding` / `.../aztec-benchmark/node_modules/@aztec…` errors mean the benchmark pulled a
+  *second* SDK tree.
+- **Benchmark DA cap.** `aztec start --local-network` defaults to 3s blocks, capping a tx at ~55.8k DA
+  gas (mainnet's 6s blocks admit ~117k). Publishing the Vault class (~64k) needs `block-duration-ms:
+  "6000"` on both aztec-benchmark workflows (6.0.0-rc.1+) and `SEQ_BLOCK_DURATION_MS` on the JS job.
+  Re-check the cap whenever a bump touches stdlib's `gas/tx_gas_limits.ts`.
