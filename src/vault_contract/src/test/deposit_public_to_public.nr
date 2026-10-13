@@ -218,3 +218,43 @@ unconstrained fn deposit_public_to_public_on_behalf_of_other_success() {
     // Check vault has assets
     utils::check_public_balance(env, asset_address, vault_address, deposit_amount);
 }
+
+#[test]
+unconstrained fn deposit_and_redeem_at_2_pow_100() {
+    // The second deposit and the redeem each multiply ~2^100 by ~2^100, which reverted under
+    // native u128 math; this runs the widened conversion on the public path the vault uses.
+    let (env, vault_address, owner, recipient, asset_address, shares_address) =
+        utils::setup_with_vault(false);
+    let amount: u128 = 0x10000000000000000000000000;
+
+    utils::mint_and_deposit_public_to_public(
+        env,
+        owner,
+        asset_address,
+        vault_address,
+        shares_address,
+        owner,
+        amount,
+    );
+    utils::mint_and_deposit_public_to_public(
+        env,
+        owner,
+        asset_address,
+        vault_address,
+        shares_address,
+        recipient,
+        amount,
+    );
+    utils::check_public_balance(env, shares_address, recipient, amount);
+
+    utils::redeem_public_to_public(
+        env,
+        vault_address,
+        shares_address,
+        recipient,
+        recipient,
+        amount,
+    );
+    utils::check_public_balance(env, shares_address, recipient, 0);
+    utils::check_public_balance(env, asset_address, recipient, amount);
+}

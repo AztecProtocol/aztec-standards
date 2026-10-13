@@ -583,10 +583,10 @@
   resolved "https://registry.yarnpkg.com/@aws/lambda-invoke-store/-/lambda-invoke-store-0.2.4.tgz#802f6a50f6b6589063ef63ba8acdee86fcb9f395"
   integrity sha512-iY8yvjE0y651BixKNPgmv1WrQc+GZ142sb0z4gYnChDDY2YqI4P/jsSopBWrKfAt7LOJAkOXt7rC/hms+WclQQ==
 
-"@aztec-foundation/aztec-benchmark@5.0.1":
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/@aztec-foundation/aztec-benchmark/-/aztec-benchmark-5.0.1.tgz#c48fcaa40280bb76a27e1352b2d7757b6598cdfe"
-  integrity sha512-u6k6grNSC7/Oq4cHBiDRlkn1SyhsjeKpXv/wyuTOIpcZHK1INOHnDsOJFCduTdg9G3LBrUPg3as8B4sj6r+L+Q==
+"@aztec-foundation/aztec-benchmark@6.0.0-rc.1":
+  version "6.0.0-rc.1"
+  resolved "https://registry.yarnpkg.com/@aztec-foundation/aztec-benchmark/-/aztec-benchmark-6.0.0-rc.1.tgz#6f55dec72c3917728f72ea19d367d65fd0d2a241"
+  integrity sha512-ajD4jqoC/KWFcDlO7VfuwkXERKDcSdkCGCxQUDv0uvZs6R2iNDBwFj8bcVvQ399CaKW9FbylaFhhu2stlNtC6g==
   dependencies:
     "@actions/core" "1.10.1"
     "@actions/exec" "1.1.1"
