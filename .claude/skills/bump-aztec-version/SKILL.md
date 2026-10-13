@@ -86,7 +86,7 @@ Run in order; stop and diagnose on the first failure:
 yarn ccc                     # clean + compile + codegen against the new deps
 yarn test:nr                 # Noir tests (aztec test) — alone on the host only: it runs against whatever
                              # listens on 8081; with other agents around use the free-port recipe in Gotchas
-# typecheck src + scripts (+ benchmarks if the benchmark dep resolves) via a temp tsconfig with noEmit
+yarn typecheck               # tsc --noEmit over src, scripts and benchmarks (CI runs it too)
 yarn format:check
 yarn install --frozen-lockfile   # lockfile matches package.json
 yarn build                   # assembles export/<pkg>
@@ -151,11 +151,10 @@ When everything is green: commit, open a PR to `main`, let CI pass, merge. Then 
 - **CI Node floor.** The shared `aztec-ci-actions` `setup-aztec` action pins `setup-node` to 24.0.0, below
   the v6 installer's 24.12 floor. If CI fails installing the toolchain, that action needs a bump first.
 - **Benchmark peerDep / duplicate tree.** `aztec-benchmark` 5.x peers `@aztec/*` `>=5 <6`; 6.0.0-rc.1 is
-  the first release with `@aztec-labs/*` peers. A mismatch fails nothing: yarn only warns, `tsconfig.json`
-  doesn't include `benchmarks/`, and tsx doesn't type-check. Check explicitly with `npx tsc --noEmit
-  --skipLibCheck --module nodenext --moduleResolution nodenext --target es2022 --resolveJsonModule
-  benchmarks/*.benchmark.ts`; `_branding` / `.../aztec-benchmark/node_modules/@aztec…` errors mean the
-  benchmark pulled a *second* SDK tree.
+  the first release with `@aztec-labs/*` peers. Yarn only warns about a mismatch and tsx doesn't
+  type-check, so run `yarn typecheck` (`tsconfig.json` includes `benchmarks/`) and then the benchmarks
+  themselves; `_branding` / `.../aztec-benchmark/node_modules/@aztec…` errors mean the benchmark pulled a
+  *second* SDK tree.
 - **Benchmark DA cap.** `aztec start --local-network` defaults to 3s blocks, capping a tx at ~55.8k DA
   gas (mainnet's 6s blocks admit ~117k). Publishing the Vault class (~64k) needs `block-duration-ms:
   "6000"` on both aztec-benchmark workflows (6.0.0-rc.1+) and `SEQ_BLOCK_DURATION_MS` on the JS job.
