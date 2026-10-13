@@ -1,11 +1,9 @@
-import { deriveKeys } from '@aztec-labs/stdlib/keys';
-import { PublicKeys } from '@aztec-labs/aztec.js/keys';
+import { PublicKeys, deriveKeys } from '@aztec-labs/aztec.js/keys';
 import { type AztecNode } from '@aztec-labs/aztec.js/node';
 import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
 import { type EmbeddedWallet } from '@aztec-labs/wallets/embedded';
-import { BlockNumber } from '@aztec-labs/foundation/branded-types';
 import { ContractDeployer } from '@aztec-labs/aztec.js/deployment';
-import { Fr } from '@aztec-labs/aztec.js/fields';
+import { BlockNumber, Fr } from '@aztec-labs/aztec.js/fields';
 import { PublicKey } from '@aztec-labs/stdlib/keys';
 import {
   getContractInstanceFromInstantiationParams,
