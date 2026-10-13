@@ -17,7 +17,6 @@ jobs:
       # JS tests run in the `js-tests` job below instead, which needs a job-level env var
       # that a reusable workflow cannot inherit from its caller.
       run-js-tests: false
-    secrets: inherit
 
   # Kept in lockstep with the `js-tests` job in pr-checks.yml — see the rationale for
   # SEQ_BLOCK_DURATION_MS there.
