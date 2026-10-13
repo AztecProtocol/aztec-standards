@@ -13,9 +13,9 @@ unconstrained fn nft_transfer_private_to_commitment_success() {
     // Verify initial ownership
     utils::assert_owns_private_nft(env, nft_contract_address, owner, token_id);
 
-    // Prepare commitment
+    // The recipient creates the commitment, naming the sender as its completer.
     let commitment = env.call_private(
-        owner,
+        recipient,
         NFT::at(nft_contract_address).initialize_transfer_commitment(recipient, owner),
     );
 

@@ -103,7 +103,7 @@ unconstrained fn escrow_withdraw_unauthorized() {
 #[test(should_fail_with = "Function with selector 0xc7784917 not found in the registered artifact")]
 unconstrained fn escrow_secret_holder_cannot_spend() {
     let escrow_secret: Field = 123456;
-    let (mut env, escrow_contract_address, token_contract_address, _, _, attacker, minter, _) =
+    let (env, escrow_contract_address, token_contract_address, _, _, attacker, minter, _) =
         escrow_utils::set_escrow_with_token_and_nft(false, escrow_secret);
 
     assert_eq(

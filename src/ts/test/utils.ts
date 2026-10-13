@@ -501,7 +501,7 @@ export async function initializeTransferCommitment(
 /**
  * Initializes a transfer commitment for an NFT
  * @param nft - The token contract instance.
- * @param caller - The wallet that will interact with the token contract.
+ * @param caller - The account that sends the transaction; the recipient, or a contract acting for it, per the README.
  * @param to - The address of the recipient.
  * @param completer - The address allowed to complete the partial note.
  * @returns Partial note commitment
@@ -509,10 +509,10 @@ export async function initializeTransferCommitment(
 export async function initializeTransferCommitmentNFT(
   nft: NFTContract,
   caller: AztecAddress,
-  to: AccountManager,
+  to: AztecAddress,
   completer: AztecAddress,
 ): Promise<bigint> {
-  const interaction = nft.methods.initialize_transfer_commitment(to.address, completer);
+  const interaction = nft.methods.initialize_transfer_commitment(to, completer);
   return proveExtractAndSendCommitment(interaction, nft.wallet, caller);
 }
 

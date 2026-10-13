@@ -46,8 +46,7 @@ unconstrained fn mint_to_public_failure_recipient_balance_overflow() {
 
 #[test(should_fail_with = "Contract execution has reverted: Assertion failed: attempt to add with overflow 'self.storage.total_supply.read() + amount'")]
 unconstrained fn mint_to_public_failure_overflow_total_supply() {
-    let (mut env, token_contract_address, owner, recipient, minter) =
-        utils::setup_with_minter(false);
+    let (env, token_contract_address, owner, recipient, minter) = utils::setup_with_minter(false);
 
     env.call_public(
         minter,

@@ -2,27 +2,19 @@ use crate::{test::utils::{self, mint_amount}, Token};
 use aztec::oracle::random::random;
 use aztec::test::helpers::authwit as authwit_cheatcodes;
 use generic_proxy::GenericProxy;
-use std::test::OracleMock;
 
-/// External orchestration means that the calls to prepare and finalize are not done by the Token contract. This flow
-/// will typically be used by a DEX.
+/// The documented flow: the recipient creates the commitment naming the payer, who completes it from its public
+/// balance.
 #[test]
 unconstrained fn transfer_public_to_commitment_external_orchestration() {
     // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
-    let (mut env, token_contract_address, owner, recipient) =
+    let (env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_public_without_minter(false);
 
-    let note_randomness = random();
-
-    // We mock the Oracle to return the note randomness such that later on we can manually add the note
-    let _ = OracleMock::mock("getRandomField").returns(note_randomness);
-
-    // We prepare the transfer
-    let commitment_result = env.call_private(
-        owner,
+    let commitment = env.call_private(
+        recipient,
         Token::at(token_contract_address).initialize_transfer_commitment(recipient, owner),
     );
-    let commitment = commitment_result;
 
     // Finalize the transfer of the tokens (message sender owns the tokens in public)
     env.call_public(

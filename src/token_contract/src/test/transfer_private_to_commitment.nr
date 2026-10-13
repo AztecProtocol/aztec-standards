@@ -77,7 +77,7 @@ unconstrained fn transfer_private_to_commitment_on_behalf_of_other() {
 }
 
 #[test(should_fail_with = "is reading an unknown nullifier")]
-unconstrained fn transfer_private_to_commitment_wrong_completer() {
+unconstrained fn transfer_private_to_commitment_failure_wrong_completer() {
     let (env, token_contract_address, owner, recipient) =
         utils::setup_and_mint_to_private_without_minter(false);
 

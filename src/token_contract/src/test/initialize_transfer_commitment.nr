@@ -25,7 +25,7 @@ unconstrained fn initialize_transfer_commitment() {
 }
 
 #[test(should_fail_with = "Invalid partial note or completer")]
-unconstrained fn initialize_transfer_commitment_and_complete_with_incorrect_completer() {
+unconstrained fn initialize_transfer_commitment_failure_wrong_completer() {
     let (env, token_contract_address, owner, recipient, minter) =
         utils::setup_and_mint_to_private_with_minter(false);
 
