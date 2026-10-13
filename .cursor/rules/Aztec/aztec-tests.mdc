@@ -9,7 +9,7 @@ version: 1.0.0
 ## Test Organization
 - Create separate test files for each major functionality
 - Name test files by feature: mint_to_private.nr, transfer_public_to_public.nr
-- Name tests `<op>`, `<op>_<variant>` or, for a should_fail test, `<op>_failure_<reason>`, where `<op>` is the entrypoint under test, which the file is usually named after, or the feature a file such as authorization.nr tests: mint_to_private, transfer_public_to_public_on_behalf_of_other, burn_public_failure_more_than_balance; no `_success` suffix, no crate prefix
+- Name tests as `AGENTS.md` says: `<op>`, `<op>_<variant>`, or `<op>_failure_<reason>` for a should_fail test; no `_success` suffix, no crate prefix
 - Group related tests in the same file
 
 ## Test Structure
