@@ -50,10 +50,12 @@ find . -name Nargo.toml -not -path '*/node_modules/*'
 ```
 - aztec-nr deps: `git = "https://github.com/aztec-labs-eng/aztec-nr"`, `tag = "vX.Y.Z"`,
   `directory = "<crate dir>"` (`aztec`, `uint-note`, `balance-set`, `compressed-string`).
-- protocol deps (escrow's `serde`): `git = "https://github.com/AztecProtocol/aztec-packages"` (no trailing
-  slash — the same string aztec-nr's own `protocol_types` dep uses), `tag = "vP"` from Step 0 (not the
-  aztec-nr tag), `directory = "noir-projects/fnd/noir-protocol-circuits/crates/serde"`. `types` reaches
-  `serde` by path inside that checkout, so any other tag adds a second, unrelated `serde` crate.
+- protocol crates: no `Nargo.toml` here depends on aztec-packages directly; they arrive through aztec-nr's
+  own `protocol_types` dep, so there is nothing to bump. If a direct dependency returns (e.g. `serde`), give it
+  `git = "https://github.com/AztecProtocol/aztec-packages"` (no trailing slash — the same string aztec-nr's
+  `protocol_types` dep uses), `tag = "vP"` from Step 0 (not the aztec-nr tag) and its
+  `directory = "noir-projects/fnd/noir-protocol-circuits/crates/<crate>"`. aztec-nr builds on that checkout
+  (`types` reaches `serde` by path inside it), so any other tag adds a second, unrelated copy of the crate.
 - **Do NOT touch** other deps: `bignum` versions independently, and `sha512` tracks upstream `master` (it
   has no tags). Instead refresh its entry in `noir-dep-revisions.txt`: if
   `git ls-remote https://github.com/noir-lang/sha512 refs/heads/master` no longer matches it, review the
