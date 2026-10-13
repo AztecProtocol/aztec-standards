@@ -27,18 +27,6 @@ unconstrained fn mint_to_private_failure_as_non_minter() {
 }
 
 #[test(should_fail_with = "Contract execution has reverted: Assertion failed: attempt to add with overflow 'self.storage.total_supply.read() + amount'")]
-unconstrained fn mint_to_private_failure_recipient_balance_overflow() {
-    let (mut env, token_contract_address, owner, recipient, minter) =
-        utils::setup_with_minter(false);
-    env.call_private(
-        minter,
-        Token::at(token_contract_address).mint_to_private(recipient, utils::max_u128()),
-    );
-
-    // Recipient's balance overflows
-    env.call_private(minter, Token::at(token_contract_address).mint_to_private(owner, 1 as u128));
-}
-#[test(should_fail_with = "Contract execution has reverted: Assertion failed: attempt to add with overflow 'self.storage.total_supply.read() + amount'")]
 unconstrained fn mint_to_private_failure_total_supply_overflow() {
     // Setup without account contracts. We are not using authwits here, so dummy accounts are enough
     let (mut env, token_contract_address, owner, recipient, minter) =
