@@ -32,7 +32,8 @@ jobs:
   # ══════════════════════════════════════════════════════════════════════════════
   build:
     name: Build
-    runs-on: ubuntu-latest
+    # Pinned so the OS upgrade is deliberate: the floating latest label moves to Ubuntu 26.04 from 2026-10-19.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
       contents: read # checkout (the tag already exists)
@@ -95,7 +96,7 @@ jobs:
     # Single environment for every tag — see the note at the top of this file.
     # Prereleases pay one approval click; that is the cost of the npm-side pin.
     environment: Production
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -211,7 +212,7 @@ jobs:
   smoke:
     name: Smoke-test published package
     needs: publish
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read # checkout, for the smoke script

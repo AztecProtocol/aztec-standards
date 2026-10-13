@@ -16,7 +16,8 @@ jobs:
   tests:
     uses: AztecProtocol/aztec-ci-actions/.github/workflows/run-tests.yml@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
     with:
-      runner: ubuntu-latest
+      # Pinned so the OS upgrade is deliberate: the floating latest label moves to Ubuntu 26.04 from 2026-10-19.
+      runner: ubuntu-24.04
       # JS tests run in the `js-tests` job below instead, which needs a job-level env var
       # that a reusable workflow cannot inherit from its caller.
       run-js-tests: false
@@ -25,7 +26,7 @@ jobs:
   # SEQ_BLOCK_DURATION_MS there.
   js-tests:
     name: JS Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
       contents: read

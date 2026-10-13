@@ -15,7 +15,8 @@ jobs:
   # reports as passing for branch protection.
   changes:
     name: Changes
-    runs-on: ubuntu-latest
+    # Pinned so the OS upgrade is deliberate: the floating latest label moves to Ubuntu 26.04 from 2026-10-19.
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: read
     outputs:
@@ -38,7 +39,7 @@ jobs:
 
   format:
     name: Format
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -51,7 +52,7 @@ jobs:
   checks:
     uses: AztecProtocol/aztec-ci-actions/.github/workflows/run-tests.yml@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
     with:
-      runner: ubuntu-latest
+      runner: ubuntu-24.04
       # JS tests run in the `js-tests` job below instead, which needs a job-level env var
       # that a reusable workflow cannot inherit from its caller.
       run-js-tests: false
@@ -61,7 +62,7 @@ jobs:
   # run-tests.yml exposes no knob for it, so the only way to reach the node is to own the job.
   js-tests:
     name: JS Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
       contents: read
@@ -106,7 +107,7 @@ jobs:
     if: needs.changes.outputs.benchmark == 'true'
     uses: AztecProtocol/aztec-benchmark/.github/workflows/pr-benchmark.yml@879fa93affa30cb5dade252ea7d2d750366a7962 # v6.0.0-rc.1
     with:
-      runner: ubuntu-latest
+      runner: ubuntu-24.04
       block-duration-ms: "6000" # mainnet geometry; see SEQ_BLOCK_DURATION_MS on js-tests
     permissions:
       contents: read
