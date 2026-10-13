@@ -9,5 +9,9 @@ aztec = { git = "https://github.com/aztec-labs-eng/aztec-nr", tag = "v6.0.0-rc.1
 serde = { git = "https://github.com/AztecProtocol/aztec-packages", tag = "v6.0.0-rc.1", directory = "noir-projects/fnd/noir-protocol-circuits/crates/serde" }
 token = { path = "../token_contract" }
 nft = { path = "../nft_contract" }
-sha512 = { git = "https://github.com/noir-lang/sha512", tag = "mv/use-bool-over-u1" }
+# Vendored verbatim from https://github.com/noir-lang/sha512 at e92ffb473f3264529a0793770f63a09946df50cc: upstream
+# has no tags, and nargo (1.0.0-rc.3) passes `tag` to `git clone --branch`, so a git dependency cannot pin a commit.
+# Key derivation hashes with this crate: a re-vendor must keep the test_logic_contract key-derivation vectors
+# passing, since a changed digest changes the escrow addresses that logic contracts derive.
+sha512 = { path = "vendor/sha512" }
 bignum = { git = "https://github.com/noir-lang/noir-bignum", tag = "v0.10.0" }
