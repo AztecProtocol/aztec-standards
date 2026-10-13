@@ -9,5 +9,6 @@ aztec = { git = "https://github.com/aztec-labs-eng/aztec-nr", tag = "v6.0.0-rc.1
 serde = { git = "https://github.com/AztecProtocol/aztec-packages", tag = "v6.0.0-rc.1", directory = "noir-projects/fnd/noir-protocol-circuits/crates/serde" }
 token = { path = "../token_contract" }
 nft = { path = "../nft_contract" }
-sha512 = { git = "https://github.com/noir-lang/sha512", tag = "mv/use-bool-over-u1" }
+# Upstream has no tags and nargo pins only refs, so CI checks the resolved commit (scripts/check-noir-deps.sh).
+sha512 = { git = "https://github.com/noir-lang/sha512", tag = "master" }
 bignum = { git = "https://github.com/noir-lang/noir-bignum", tag = "v0.10.0" }

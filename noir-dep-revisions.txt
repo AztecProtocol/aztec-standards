@@ -1,0 +1,6 @@
+# Commits that nargo's cached git dependencies must be at, checked by scripts/check-noir-deps.sh.
+# One entry per line: the clone's path under $HOME/nargo (<host>/<org>/<repo>/<tag>), then the full commit SHA.
+# sha512 has no tags, so its `master` moves: review the upstream change before updating the entry, since escrow
+# key derivation hashes with it. Other git dependencies declared in this repo can be listed the same way to catch
+# a moved tag.
+github.com/noir-lang/sha512/master e92ffb473f3264529a0793770f63a09946df50cc

@@ -87,6 +87,11 @@ jobs:
           start-pxe: 'true'
           run-codegen: 'true'
 
+      # Needs the nargo cache that the setup step's `aztec compile` fills; the Noir tests run in a reusable
+      # workflow that takes no extra steps.
+      - name: Check Noir dependency revisions
+        run: yarn check:noir-deps
+
       # Lives here rather than in `format` because src/artifacts only exists after the setup step's codegen.
       - name: Typecheck
         run: yarn typecheck
