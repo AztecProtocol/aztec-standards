@@ -115,4 +115,4 @@ The contracts above are the complete, intended scope of this repository. The Azt
 
 ## License
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE), except the vendored [`src/escrow_contract/vendor/sha512`](src/escrow_contract/vendor/sha512), which keeps its upstream [Apache-2.0 license](src/escrow_contract/vendor/sha512/LICENSE).

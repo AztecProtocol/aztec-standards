@@ -45,7 +45,12 @@ find . -name Nargo.toml -not -path '*/node_modules/*'
 - protocol deps (escrow's `serde`): `git = "https://github.com/AztecProtocol/aztec-packages"` (no trailing
   slash — the same string aztec-nr's own `protocol_types` dep uses), same tag,
   `directory = "noir-projects/fnd/noir-protocol-circuits/crates/serde"`.
-- **Do NOT touch** other deps (e.g. `sha512`, `bignum`) — they version independently.
+- **Do NOT touch** other deps: `bignum` versions independently, and `sha512` is vendored verbatim in
+  `src/escrow_contract/vendor/sha512` (upstream has no tags, and nargo cannot pin a git dependency to a
+  commit). Re-vendoring it is a change of its own: the `test_logic_contract` key-derivation vectors must
+  still pass, since a changed digest changes the escrow addresses that logic contracts derive, and any
+  difference in the compiled `Escrow`/`TestLogic` artifacts (function bytecode, verification keys, class ids)
+  against a build from before the change must be called out.
 
 ## Step 2 — bump the npm deps (`package.json`)
 - Every `@aztec-labs/*` dependency and `@aztec-foundation/bb.js` → the npm version, **pinned exactly**: the
