@@ -8,6 +8,7 @@ mod transfer_private_to_commitment;
 mod transfer_private_to_private;
 mod transfer_private_to_public_with_commitment;
 mod transfer_private_to_public;
+mod transfer_public_to_commitment;
 mod transfer_public_to_private;
 mod transfer_public_to_public;
 mod cancel_authwit;

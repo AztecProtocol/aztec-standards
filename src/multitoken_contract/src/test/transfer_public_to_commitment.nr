@@ -1,6 +1,7 @@
 use crate::MultiToken;
 use crate::test::utils::{self, mint_amount};
 use aztec::oracle::random::random;
+use aztec::test::helpers::authwit as authwit_cheatcodes;
 
 #[test]
 unconstrained fn transfer_public_to_commitment_success() {
@@ -26,6 +27,49 @@ unconstrained fn transfer_public_to_commitment_success() {
             0,
         ),
     );
+
+    utils::check_public_balance(
+        env,
+        multitoken_contract_address,
+        owner,
+        id,
+        mint_amount - transfer_amount,
+    );
+    utils::check_private_balance(
+        env,
+        multitoken_contract_address,
+        recipient,
+        id,
+        transfer_amount,
+    );
+}
+
+/// Under an authwit the caller, not `from`, is the completer the commitment must designate.
+#[test]
+unconstrained fn transfer_public_to_commitment_on_behalf_of_other() {
+    // The recipient pulls from the owner's public balance into its own commitment, under the owner's public authwit.
+    let (env, multitoken_contract_address, owner, recipient, _) =
+        utils::setup_and_mint_to_public_with_minter(true, 1);
+
+    let commitment = env.call_private(
+        recipient,
+        MultiToken::at(multitoken_contract_address).initialize_transfer_commitment(
+            recipient,
+            recipient,
+        ),
+    );
+
+    let id: Field = 1;
+    let transfer_amount = mint_amount / (10 as u128);
+    let call_interface = MultiToken::at(multitoken_contract_address).transfer_public_to_commitment(
+        owner,
+        id,
+        commitment,
+        transfer_amount,
+        1,
+    );
+    authwit_cheatcodes::add_public_authwit_from_call(env, owner, recipient, call_interface);
+    env.call_public(recipient, call_interface);
 
     utils::check_public_balance(
         env,
