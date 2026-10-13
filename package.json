@@ -32,7 +32,6 @@
   "devDependencies": {
     "@aztec-foundation/aztec-benchmark": "6.0.0-rc.1",
     "@aztec-foundation/bb.js": "6.0.0-rc.1",
-    "@aztec-labs/foundation": "6.0.0-rc.1",
     "@aztec-labs/pxe": "6.0.0-rc.1",
     "@aztec-labs/stdlib": "6.0.0-rc.1",
     "@aztec-labs/wallet-sdk": "6.0.0-rc.1",
