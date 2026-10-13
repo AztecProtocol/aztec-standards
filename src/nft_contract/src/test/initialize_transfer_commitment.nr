@@ -15,6 +15,14 @@ unconstrained fn nft_initialize_transfer_commitment_success() {
     );
 
     utils::check_commitment_completer(env, nft_contract_address, commitment, owner);
+
+    // The commitment belongs to `to`, not to whoever created it, as when a contract creates it for `to`.
+    env.call_private(
+        owner,
+        NFT::at(nft_contract_address).transfer_private_to_commitment(owner, token_id, commitment, 0),
+    );
+    utils::assert_owns_private_nft(env, nft_contract_address, recipient, token_id);
+    utils::assert_private_nft_nullified(env, nft_contract_address, owner, token_id);
 }
 
 #[test]
