@@ -62,6 +62,10 @@ jobs:
           start-pxe: 'false'
           run-codegen: 'true'
 
+      # Checks the listed dependency revisions once the setup step's compile has filled nargo's cache, before packing.
+      - name: Check Noir dependency revisions
+        run: yarn check:noir-deps
+
       - name: Build package
         run: yarn build
 
