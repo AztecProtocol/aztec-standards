@@ -117,7 +117,10 @@ unconstrained fn escrow_secret_holder_cannot_spend() {
         Token::at(token_contract_address).mint_to_private(escrow_contract_address, amount),
     );
 
-    // TXE registered the escrow's keys from its secret, so with the escrow in scope the attacker can read its notes.
+    // The attacker is the strongest secret holder: TXE registered the escrow's keys from its secret, so with the
+    // escrow in scope it can read the escrow's notes. The spend fails regardless: the Escrow has no
+    // `verify_private_authwit`, so no caller but the Escrow itself can satisfy the token's `authorize_once`, with or
+    // without the escrow's keys in scope.
     token_utils::check_private_balance(
         env,
         token_contract_address,
