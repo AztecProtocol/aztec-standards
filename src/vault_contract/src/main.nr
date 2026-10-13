@@ -1461,7 +1461,7 @@ pub contract Vault {
         rounding: bool,
     ) -> u128 {
         // `assets * (total_supply + vault_offset)` overflows u128 for large inputs; compute it in a
-        // 512-bit intermediate. Rounding is unchanged (see `conversion::mul_div`).
+        // 256-bit intermediate. Rounding is unchanged (see `conversion::mul_div`).
         crate::conversion::mul_div(
             assets,
             total_supply + vault_offset,
@@ -1485,7 +1485,7 @@ pub contract Vault {
         vault_offset: u128,
         rounding: bool,
     ) -> u128 {
-        // `shares * (total_assets + 1)` overflows u128 for large inputs; compute it in a 512-bit
+        // `shares * (total_assets + 1)` overflows u128 for large inputs; compute it in a 256-bit
         // intermediate. Rounding is unchanged (see `conversion::mul_div`).
         crate::conversion::mul_div(
             shares,

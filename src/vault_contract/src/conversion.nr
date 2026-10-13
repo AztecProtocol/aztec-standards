@@ -2,11 +2,10 @@
 //!
 //! The share<>asset conversions compute `a * b / denominator`. Done natively in `u128`, the
 //! intermediate product `a * b` overflows for large-but-legitimate inputs (Noir range-checks u128,
-//! so the transaction reverts rather than wrapping) — this is the availability bug flagged by the
-//! 2026-08 security audit (F-004). We compute the product and the division in a 256-bit intermediate
-//! (`noir-bignum`'s `U256` — three 120-bit limbs, modulus 2^256) so nothing overflows until
-//! the final result, which is narrowed back to `u128` and only fails if the true result genuinely
-//! exceeds `u128` — an impossibility for real balances.
+//! so the transaction reverts rather than wrapping). We compute the product and the division in a
+//! 256-bit intermediate (`noir-bignum`'s `U256` — three 120-bit limbs, modulus 2^256) so nothing
+//! overflows until the final result, which is narrowed back to `u128` and only fails if the true
+//! result genuinely exceeds `u128` — an impossibility for real balances.
 
 use bignum::bignum::BigNum;
 use bignum::U256;
