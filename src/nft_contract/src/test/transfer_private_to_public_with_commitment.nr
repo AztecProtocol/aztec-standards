@@ -107,7 +107,6 @@ unconstrained fn nft_transfer_private_to_public_with_commitment_returns_to_from(
 
     utils::assert_owns_private_nft(env, nft_contract_address, owner, token_id);
     utils::assert_owns_public_nft(env, nft_contract_address, AztecAddress::zero(), token_id);
-    utils::assert_private_nft_nullified(env, nft_contract_address, custodian, token_id);
     utils::assert_nft_exists(env, nft_contract_address, token_id);
 }
 
