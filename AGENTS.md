@@ -16,3 +16,18 @@ names and organizes its tests. Commands and layout are in `README.md`.
   is never enough.
 - A new test must fail when the behaviour it guards is broken. Check that by breaking the behaviour, and say in the
   PR which tests were checked that way.
+
+## Pull requests
+
+The description is read by someone who did not follow the work and will not read the diff first. PR #49's is the
+reference. In this order, in plain sentences:
+
+1. One line: what the PR fixes or changes, and why it matters. The title names the operation; this names the problem.
+2. **What changed**, grouped by concern, each bullet leading with the effect, then the mechanism, then the reason, in
+   one or two sentences. Say what a reviewer should look at hardest.
+3. **Breaking changes**, with what an integrator has to do, or the line that says there are none.
+4. **Not in this PR**: what was left out and why, and what cannot be verified before merge.
+
+Evidence comes last and stays short: which tests were checked to fail with the bug put back, the one number that
+matters. No tables of versions or paths, no logs, no inventory of everything that was checked; that is what the diff
+and CI are for. A description is as long as the change needs and no longer; most fit on one screen.
