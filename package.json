@@ -42,7 +42,12 @@
     "lint-staged": "16.2.7",
     "prettier": "3.8.0",
     "typescript": "5.9.3",
-    "vitest": "4.0.17"
+    "vitest": "4.1.11"
+  },
+  "resolutions": {
+    "postcss": "8.5.23",
+    "source-map-js": "1.2.2",
+    "vite": "7.3.7"
   },
   "config": {
     "aztecVersion": "6.0.0-rc.1"
