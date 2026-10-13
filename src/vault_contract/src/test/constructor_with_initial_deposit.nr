@@ -16,7 +16,7 @@ use token_contract::Token;
 // (see setup_with_vault_initial_deposit).
 
 #[test]
-unconstrained fn vault_with_initial_deposit_success() {
+unconstrained fn set_shares_token_with_initial_deposit() {
     let initial_deposit: u128 = 1000;
 
     // Setup environment with vault and initial deposit
@@ -40,7 +40,7 @@ unconstrained fn vault_with_initial_deposit_success() {
 }
 
 #[test]
-unconstrained fn vault_with_initial_deposit_subsequent_deposits_work() {
+unconstrained fn set_shares_token_with_initial_deposit_subsequent_deposits_work() {
     let initial_deposit: u128 = 1000;
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         setup_with_vault_initial_deposit(false, initial_deposit);
@@ -71,7 +71,7 @@ unconstrained fn vault_with_initial_deposit_subsequent_deposits_work() {
 }
 
 #[test]
-unconstrained fn vault_with_initial_deposit_yield_distribution() {
+unconstrained fn set_shares_token_with_initial_deposit_yield_distribution() {
     let initial_deposit: u128 = 1000;
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         setup_with_vault_initial_deposit(false, initial_deposit);
@@ -115,7 +115,7 @@ unconstrained fn vault_with_initial_deposit_yield_distribution() {
 }
 
 #[test(should_fail_with = "initial_deposit must be greater than 0")]
-unconstrained fn vault_with_initial_deposit_fail_zero_amount() {
+unconstrained fn set_shares_token_with_initial_deposit_failure_zero_amount() {
     let (mut env, vault_address, owner, _recipient, _asset_address) = setup_vault_without_shares();
 
     // Deploy shares token with vault as minter

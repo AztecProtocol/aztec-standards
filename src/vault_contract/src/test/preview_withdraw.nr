@@ -9,7 +9,7 @@ use token_contract::Token;
 /// withdraw variant is sufficient to verify the preview accuracy.
 
 #[test]
-unconstrained fn preview_withdraw_success() {
+unconstrained fn preview_withdraw() {
     // Setup with asset token
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(false);
@@ -52,7 +52,7 @@ unconstrained fn preview_withdraw_success() {
 }
 
 #[test]
-unconstrained fn preview_withdraw_with_yield_accrued_success() {
+unconstrained fn preview_withdraw_with_yield_accrued() {
     // Setup with asset token
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(false);

@@ -4,7 +4,7 @@ use aztec::test::helpers::authwit as authwit_cheatcodes;
 use token_contract::Token;
 
 #[test(should_fail_with = "Trying to read from uninitialized PublicImmutable")]
-unconstrained fn redeem_public_to_public_without_shares() {
+unconstrained fn redeem_public_to_public_failure_without_shares() {
     let (env, vault_address, owner, recipient, _asset_address) =
         utils::setup_vault_without_shares();
 
@@ -15,7 +15,7 @@ unconstrained fn redeem_public_to_public_without_shares() {
 }
 
 #[test]
-unconstrained fn redeem_public_to_public_success() {
+unconstrained fn redeem_public_to_public() {
     // Setup with asset token
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(false);
@@ -105,7 +105,7 @@ unconstrained fn redeem_public_to_public_after_yield() {
 }
 
 #[test(should_fail_with = "unauthorized")]
-unconstrained fn redeem_public_to_public_without_approval() {
+unconstrained fn redeem_public_to_public_failure_without_approval() {
     // Setup with asset token
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(false);
@@ -137,7 +137,7 @@ unconstrained fn redeem_public_to_public_without_approval() {
 }
 
 #[test(should_fail_with = "unauthorized")]
-unconstrained fn redeem_public_to_public_on_behalf_of_wrong_caller() {
+unconstrained fn redeem_public_to_public_failure_on_behalf_of_wrong_caller() {
     // Setup with asset token
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(false);
@@ -179,7 +179,7 @@ unconstrained fn redeem_public_to_public_on_behalf_of_wrong_caller() {
 }
 
 #[test]
-unconstrained fn redeem_public_to_public_on_behalf_of_other_success() {
+unconstrained fn redeem_public_to_public_on_behalf_of_other() {
     // Setup with asset token
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(false);

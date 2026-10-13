@@ -5,7 +5,7 @@ use generic_proxy::GenericProxy;
 use token_contract::Token;
 
 #[test(should_fail_with = "Trying to read from uninitialized PublicImmutable")]
-unconstrained fn deposit_private_to_private_exact_fails_without_shares() {
+unconstrained fn deposit_private_to_private_exact_failure_without_shares() {
     let (env, vault_address, owner, recipient, _asset_address) =
         utils::setup_vault_without_shares();
 
@@ -22,7 +22,7 @@ unconstrained fn deposit_private_to_private_exact_fails_without_shares() {
 }
 
 #[test]
-unconstrained fn deposit_private_to_private_exact_success() {
+unconstrained fn deposit_private_to_private_exact() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(true);
@@ -167,7 +167,7 @@ unconstrained fn deposit_private_to_private_exact_request_fewer_shares() {
 }
 
 #[test(should_fail_with = "Assertion failed: attempt to subtract with overflow ")]
-unconstrained fn deposit_private_to_private_exact_request_too_many_shares() {
+unconstrained fn deposit_private_to_private_exact_failure_request_too_many_shares() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, _) =
         utils::setup_with_vault(true);
@@ -202,7 +202,7 @@ unconstrained fn deposit_private_to_private_exact_request_too_many_shares() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash ")]
-unconstrained fn deposit_private_to_private_exact_without_asset_approval() {
+unconstrained fn deposit_private_to_private_exact_failure_without_asset_approval() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, _) =
         utils::setup_with_vault(true);
@@ -227,7 +227,7 @@ unconstrained fn deposit_private_to_private_exact_without_asset_approval() {
 }
 
 #[test(should_fail_with = "Unknown auth witness for message hash ")]
-unconstrained fn deposit_private_to_private_exact_on_behalf_of_wrong_caller() {
+unconstrained fn deposit_private_to_private_exact_failure_on_behalf_of_wrong_caller() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, _) =
         utils::setup_with_vault(true);
@@ -269,7 +269,7 @@ unconstrained fn deposit_private_to_private_exact_on_behalf_of_wrong_caller() {
 }
 
 #[test]
-unconstrained fn deposit_private_to_private_exact_on_behalf_of_other_success() {
+unconstrained fn deposit_private_to_private_exact_on_behalf_of_other() {
     // Setup with asset token
     let (mut env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(true);

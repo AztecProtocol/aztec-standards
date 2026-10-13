@@ -9,7 +9,7 @@ use token_contract::Token;
 /// issue variant is sufficient to verify the preview accuracy.
 
 #[test]
-unconstrained fn issue_public_to_public_success() {
+unconstrained fn preview_issue() {
     // Setup with asset token
     let (env, vault_address, owner, recipient, asset_address, shares_address) =
         utils::setup_with_vault(false);
@@ -56,7 +56,7 @@ unconstrained fn issue_public_to_public_success() {
 }
 
 #[test]
-unconstrained fn preview_issue_with_yield_accrued_success() {
+unconstrained fn preview_issue_with_yield_accrued() {
     // Setup with asset token
     let (env, vault_address, owner, recipient, asset_address, _shares_address) =
         utils::setup_with_vault(false);
