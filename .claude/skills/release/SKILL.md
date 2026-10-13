@@ -12,10 +12,13 @@ description: >-
 
 One flow for both. The tag-driven `release.yml` (`on: push tags v*`) derives the npm dist-tag from the
 version — a prerelease such as `-rc.N` publishes under `rc`, a stable version under `latest` — and runs
-**every** publish in the reviewer-gated `Production` environment. The `rc` is a **rehearsal** for the
-immutable production publish — always do it first, and because it uses the same environment and
-credential path, a green `rc` genuinely predicts the stable run. Assumes the version bump is already
-merged to `main` (see the `bump-aztec-version` skill).
+**every** publish in the reviewer-gated `Production` environment. The run is three jobs: `Build` (toolchain,
+`yarn build`, `npm pack`, a smoke test of that tarball, then uploads it as the `npm-tarball` run artifact;
+read-only token, no OIDC), `Publish` (the only job with `id-token: write`; no checkout, no build code; publishes
+that exact tarball from the `Production` environment), then `Smoke-test published package`. The `rc` is a
+**rehearsal** for the immutable production publish — always do it first, and because it uses the same
+environment and credential path, a green `rc` genuinely predicts the stable run. Assumes the version bump is
+already merged to `main` (see the `bump-aztec-version` skill).
 
 ## Preconditions (state them; don't assume)
 
@@ -94,11 +97,14 @@ rc=0; git ls-remote --exit-code --tags origin "refs/tags/v$TARGET" > /dev/null |
 git tag --no-sign "v$TARGET" "$SHA" && git push origin "refs/tags/v$TARGET"   # lightweight: GitHub shows the commit's signature (Step 3); fires release.yml
 ```
 
-Every tag — rc included — parks on the `Production` environment waiting for a reviewer. Verify the run
-shows `Production` before it publishes; anything else means the workflow drifted and the OIDC token will
-be rejected. **The approval is the maintainer's to give, not yours**: report that the run is waiting and
-let the user approve it. Do not approve the deployment on their behalf, even with working `gh`
-credentials and even for an rc — that click is the human gate this design buys.
+`Build` runs unattended; then every tag — rc included — parks its `Publish` job on the `Production`
+environment waiting for a reviewer. By then the exact tarball exists, already smoke-tested, as the run's
+`npm-tarball` artifact (`gh run download <run-id> -n npm-tarball`, then `tar -tzf *.tgz`), so the reviewer
+approves a package they can inspect, not a build that has yet to happen. Verify the run shows `Production`
+before it publishes; anything else means the workflow drifted and the OIDC token will be rejected. **The
+approval is the maintainer's to give, not yours**: report that the run is waiting and let the user approve
+it. Do not approve the deployment on their behalf, even with working `gh` credentials and even for an rc —
+that click is the human gate this design buys.
 
 ## Step 5 — verify, THEN report
 
@@ -112,8 +118,16 @@ cd "$(mktemp -d)" && npm init -y >/dev/null && npm i --prefer-online @aztec-foun
 ```
 
 For production `DIST=latest`, so `@latest` is what a plain `npm i @aztec-foundation/aztec-standards` resolves to.
-Report success once the publish step is green (+ provenance) and the version resolves. A red
-_smoke_ step alone (propagation lag) is not a failed release — confirm the publish step + `npm view`.
+Report success once the publish step is green (+ provenance) and the version resolves. The
+`Smoke-test published package` job (`scripts/smoke-test-package.sh`) installs the published version, installs
+`@aztec-labs/aztec.js` at the package's `config.aztecVersion` beside it, checks the package ships exactly what
+`scripts/package-contents.sh` lists, and imports every wrapper through both `artifacts/src/artifacts/` and
+`dist/src/artifacts/`, plus `target/token_contract-Token.json`. It only _warns_ when the registry never resolves
+the version inside its wait window (exit 75: propagation lag or an outage — confirm with `npm view`); once the
+version resolves, any failure, install errors included, is red and means the published package is broken. The
+version is immutable, so the fix is a new version. `Build` runs the same script on the
+tarball before the approval, and it rehearses locally: `yarn build`, `npm pack --pack-destination <dir>` in
+`export/@aztec-foundation/aztec-standards`, then `scripts/smoke-test-package.sh <dir>/<name>.tgz <version>`.
 
 **Order across releases:** rc first (`DIST=rc`, rehearsal), then production (`DIST=latest`) once it's green.
 
@@ -125,9 +139,10 @@ _smoke_ step alone (propagation lag) is not a failed release — confirm the pub
   trimmed `package.json`; `npm version` there is a no-op (`npm error Version not changed`) and leaves the
   tag mismatched against the real version → `release.yml` validation fails. Step 3's guard catches it.
 - **Registry propagation lag (esp. first publish).** A just-published version — particularly a package's
-  first-ever publish — can take minutes to resolve; an immediate `npm install` 404s. Don't fail the
-  release on a smoke miss (warn), and use `--prefer-online` to bypass the negative cache. Your _local_
-  npm may also cache the 404 — re-check with `npm view … --prefer-online`.
+  first-ever publish — can take minutes to resolve; an immediate `npm install` 404s. The smoke job
+  retries and then only warns while the registry does not resolve the version, and uses `--prefer-online`
+  to bypass the negative cache; a failure once it resolves is never lag. Your _local_ npm may also cache
+  the 404 — re-check with `npm view … --prefer-online`.
 - **The first publish claims `latest`.** npm sets `latest` on a package's first-ever publish regardless of
   `--tag`, so an `rc` rehearsal on a brand-new package leaves `latest` pointing at the rc. It self-corrects
   when the stable `X.Y.Z` publishes; you can't `dist-tag rm latest` (a package must have one). Don't
@@ -145,13 +160,30 @@ _smoke_ step alone (propagation lag) is not a failed release — confirm the pub
 - **Pin CI to real tags.** Reusable-workflow refs (aztec-ci-actions / aztec-benchmark) should be pinned to a
   released tag SHA (with a `# vX` comment), not a transient `main` HEAD — a pre-re-scope commit can still
   `require('@defi-wonderland/…')`.
-- **npm is immutable.** Always rehearse with an `rc` before the final tag. `release.yml` publishes
-  idempotently when the expected dist-tag is already correct and smoke-tests the result. A rerun
-  with a mismatched dist-tag fails safely and requires a maintainer to repair the tag manually.
+- **npm is immutable.** Always rehearse with an `rc` before the final tag. A rerun skips an
+  already-published version only when the registry holds the very bytes this run's `Build` produced and
+  the expected dist-tag is correct, then smoke-tests it. Different bytes (a rebuild that did not reproduce)
+  or a mismatched dist-tag fail safely; the dist-tag needs a maintainer to repair it manually.
+- **What the tarball holds.** `scripts/package-contents.sh` lists it, and consumers import four paths, so
+  `scripts/build-package.sh` keeps them all while compiling each published wrapper once:
+  `artifacts/src/artifacts/<Name>.js` (+ `.d.ts`) beside `artifacts/target/<crate>-<Name>.json`;
+  `dist/src/artifacts/<Name>.js`, one-line re-exports of those; and `target/<crate>-<Name>.json`, a second
+  copy of the published artifacts. The Noir test fixtures' wrappers never ship;
+  `generic_proxy-GenericProxy.json` and `test_authorization_contract-AuthorizationContract.json` ship in
+  `artifacts/target/` only, for forks of Token that run its Noir tests under TXE. A new wrapper in neither
+  list fails the build until it is classified. The upstream pre-release workflow still tars `dist/` into
+  `dist.tar.gz`, which no longer works on its own; its `.tgz` asset is the installable one. Check with
+  `npm pack --dry-run` in the export dir.
 - **OIDC + provenance.** `release.yml` uses npm Trusted Publishing (needs `id-token: write`, npm CLI
   11.5.1+, Node 22.14.0+, `repository.url` matching the running repo, and the job's `environment` claim
   matching the trusted publisher). npm generates provenance automatically; a Sigstore transparency-log
-  line in the publish output confirms it worked.
+  line in the publish output confirms it worked. `Publish` publishes the `Build` tarball by path: the OIDC
+  exchange and provenance work as for a directory (the provenance digest is the tarball's), no lifecycle
+  script runs, and the registry metadata carries no `gitHead` (the provenance names the commit). Since
+  `Build` output is untrusted there, `Publish` refuses an artifact that is not exactly the one file `npm pack`
+  names for the tag, a tarball that ships `.git`, and one whose manifest — read with npm's own pacote — names
+  another package or version or sets `publishConfig`, `tag`, `gitHead` or `dist`: npm 11.5.1 lets those
+  reroute the OIDC exchange, override `--tag`, or copy any file the job can read into the published metadata.
 - **`E404` on `PUT` means unauthorized, not missing.** npm answers an unauthenticated or unrecognised
   publish with `404 Not Found - PUT …/@aztec-foundation%2faztec-standards`. Do not read it as a registry
   or version problem. Check, in order: is a trusted publisher configured for the package at all; does its
@@ -160,8 +192,9 @@ _smoke_ step alone (propagation lag) is not a failed release — confirm the pub
   back to anonymous). Nothing is published when this fires, so the tag is safe to reuse after the fix —
   re-run the failed job rather than churning the tag.
 - **Reruns cannot repair dist-tags.** npm OIDC authenticates `npm publish`, not `npm dist-tag add`. A
-  rerun skips an already-published version only when its expected dist-tag is already correct; otherwise
-  the workflow fails with instructions to repair the tag using an authorized npm account.
+  rerun skips an already-published version only when its expected dist-tag is already correct (and the
+  bytes match, above); otherwise the workflow fails with instructions to repair the tag using an authorized
+  npm account.
 - **Never move a release tag.** A failed run is re-run, not re-tagged. The one exception is a tag pushed
   to the wrong commit whose run never reached `Publish to NPM with OIDC` (e.g. the tag/`package.json`
   check failed). Before deleting such a tag, confirm with `--prefer-online` that npm answers `E404` for the

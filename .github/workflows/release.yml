@@ -7,6 +7,13 @@ name: Release
 # It also makes the `rc` a faithful rehearsal: it exercises the same environment and
 # credential path the stable release will use, instead of a parallel one that can
 # drift out from under it.
+#
+# Only `publish` can mint the OIDC token, and it runs no checkout and no build code:
+# it publishes, byte for byte, the tarball that `build` packed and smoke-tested with
+# a read-only token and uploaded as the `npm-tarball` run artifact. `Production`
+# therefore asks for approval only once that tarball exists: download it from the
+# waiting run and inspect it before approving. A rerun whose rebuilt tarball differs
+# from the version already on npm fails instead of skipping.
 on:
   push:
     tags:
@@ -16,70 +23,92 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  PROJECT_NAME: '@aztec-foundation/aztec-standards'
+
 jobs:
   # ══════════════════════════════════════════════════════════════════════════════
-  # PUBLISH JOB
+  # BUILD JOB — toolchain and third-party code, read-only token, no OIDC
   # ══════════════════════════════════════════════════════════════════════════════
-  release:
-    name: Publish
-    # Single environment for every tag — see the note at the top of this file.
-    # Prereleases pay one approval click; that is the cost of the npm-side pin.
-    environment: Production
+  build:
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read # checkout (the tag already exists)
-      id-token: write # OIDC token for npm Trusted Publishing
-
-    env:
-      PROJECT_NAME: '@aztec-foundation/aztec-standards'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          fetch-depth: 0
+          persist-credentials: false
 
-      # Toolchain is pinned via package.json `config.aztecVersion`: this action
-      # reads that field and installs the matching Aztec version.
-      - name: Setup Aztec environment
-        id: setup-aztec
-        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
-        with:
-          start-pxe: 'false'
-          run-codegen: 'true'
-
-      # Validate that the tag (v5.0.0) matches package.json and derive the npm
-      # dist-tag: `latest` for a final release, or the prerelease identifier
-      # (rc / beta / nightly) so consumers can `npm i pkg@rc`.
-      - name: Resolve release metadata
-        id: meta
+      # Fails a mistagged commit in seconds instead of after the toolchain install.
+      # `publish` checks the tarball's own package.json against the tag again.
+      - name: Check the tag matches package.json
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           PKG_VERSION=$(node -p "require('./package.json').version")
-          echo "Tag version: $VERSION"
-          echo "package.json version: $PKG_VERSION"
           if [ "$VERSION" != "$PKG_VERSION" ]; then
             echo "::error::Tag ${GITHUB_REF_NAME} (version $VERSION) does not match package.json version ($PKG_VERSION)."
             exit 1
           fi
 
-          if [[ "$VERSION" == *-* ]]; then
-            PRERELEASE="${VERSION#*-}"     # e.g. "rc.2"
-            DIST_TAG="${PRERELEASE%%.*}"   # e.g. "rc"
-          else
-            DIST_TAG="latest"
-          fi
-
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
-          echo "Resolved npm dist-tag: $DIST_TAG"
+      # Toolchain is pinned via package.json `config.aztecVersion`: this action
+      # reads that field and installs the matching Aztec version.
+      - name: Setup Aztec environment
+        uses: AztecProtocol/aztec-ci-actions/actions/setup-aztec@431859e477234b8690eb1f80d1305d2e34f10f1b # v0.1.1
+        with:
+          start-pxe: 'false'
+          run-codegen: 'true'
 
       - name: Build package
         run: yarn build
 
+      - name: Pack tarball
+        working-directory: export/@aztec-foundation/aztec-standards
+        run: |
+          mkdir -p "$RUNNER_TEMP/npm-tarball"
+          npm pack --pack-destination "$RUNNER_TEMP/npm-tarball"
+
+      # The smoke job's check, run on the bytes awaiting approval while a failure still costs nothing.
+      - name: Smoke-test tarball
+        run: bash scripts/smoke-test-package.sh "$RUNNER_TEMP"/npm-tarball/*.tgz "${GITHUB_REF_NAME#v}"
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npm-tarball
+          path: ${{ runner.temp }}/npm-tarball/
+          if-no-files-found: error
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # PUBLISH JOB — OIDC token, npm and the tarball; no checkout, no build code
+  # ══════════════════════════════════════════════════════════════════════════════
+  publish:
+    name: Publish
+    needs: build
+    # Single environment for every tag — see the note at the top of this file.
+    # Prereleases pay one approval click; that is the cost of the npm-side pin.
+    environment: Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm Trusted Publishing
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      dist_tag: ${{ steps.meta.outputs.dist_tag }}
+
+    steps:
+      - name: Download tarball
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-tarball
+          path: npm-tarball
+
       - name: Setup Node.js for NPM publish
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           # npm Trusted Publishing requires Node >=22.14.0 and npm >=11.5.1.
           node-version: '22.14.0'
@@ -88,47 +117,128 @@ jobs:
       - name: Install OIDC-capable npm
         run: npm install --global npm@11.5.1
 
-      # npm versions are immutable. OIDC supports publish but not dist-tag mutation,
-      # so reruns verify the existing dist-tag rather than trying to repair it.
-      - name: Publish to NPM with OIDC
+      # The tag, not anything `build` reports, decides the version and the npm
+      # dist-tag: `latest` for a final release, or the prerelease identifier
+      # (rc / beta / nightly) so consumers can `npm i pkg@rc`.
+      - name: Resolve release metadata
+        id: meta
         run: |
-          cd "export/${PROJECT_NAME}"
-          VERSION="${{ steps.meta.outputs.version }}"
-          DIST_TAG="${{ steps.meta.outputs.dist_tag }}"
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "$VERSION" == *-* ]]; then
+            PRERELEASE="${VERSION#*-}"     # e.g. "rc.2"
+            DIST_TAG="${PRERELEASE%%.*}"   # e.g. "rc"
+          else
+            DIST_TAG="latest"
+          fi
+
+          # The artifact is build output, so its file names are untrusted too: it must hold
+          # exactly the one regular file `npm pack` names for this version.
+          TARBALL="npm-tarball/$(tr / - <<< "${PROJECT_NAME#@}")-${VERSION}.tgz"
+          if [ "$(find npm-tarball -mindepth 1 -printf '%y %p\n')" != "f ${TARBALL}" ]; then
+            echo "::error::The npm-tarball artifact must hold exactly ${TARBALL} and nothing else."
+            exit 1
+          fi
+
+          # npm publishes the manifest pacote reads from the extracted archive, where a later
+          # entry can replace package/package.json, so check it with npm's own pacote. In npm
+          # 11.5.1 a tarball steers the publish through publishConfig (registry, proxy and TLS
+          # settings, and with them the OIDC exchange), `tag` (overrides --tag) and `dist`,
+          # and through a .git whose HEAD names any file, which npm copies into `gitHead`.
+          node - "$(npm root -g)/npm/node_modules/pacote" "$PWD/$TARBALL" "${PROJECT_NAME}@${VERSION}" <<'EOF'
+          const { existsSync, mkdtempSync } = require('node:fs');
+          const { join } = require('node:path');
+          const [pacotePath, tarball, expected] = process.argv.slice(2);
+          const pacote = require(pacotePath);
+          (async () => {
+            const dir = mkdtempSync(join(process.env.RUNNER_TEMP, 'npm-tarball-'));
+            await pacote.extract(`file:${tarball}`, dir);
+            if (existsSync(join(dir, '.git'))) throw new Error('the tarball ships .git');
+            const manifest = await pacote.manifest(`file:${tarball}`, { fullReadJson: true });
+            const id = `${manifest.name}@${manifest.version}`;
+            if (id !== expected) throw new Error(`the tarball holds ${id}, but the tag publishes ${expected}`);
+            for (const field of ['publishConfig', 'tag', 'gitHead', 'dist']) {
+              if (field in manifest) throw new Error(`the tarball's package.json sets ${field}`);
+            }
+            console.log(`Tarball: ${tarball} (${id})`);
+          })().catch((error) => {
+            console.log(`::error::${error.message}`);
+            process.exit(1);
+          });
+          EOF
+
+          {
+            echo "version=$VERSION"
+            echo "dist_tag=$DIST_TAG"
+            echo "tarball=./$TARBALL"
+          } >> "$GITHUB_OUTPUT"
+          echo "Resolved npm dist-tag: $DIST_TAG"
+
+      # npm versions are immutable. OIDC supports publish but not dist-tag mutation,
+      # so reruns verify the published bytes and dist-tag rather than trying to repair them.
+      - name: Publish to NPM with OIDC
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          DIST_TAG: ${{ steps.meta.outputs.dist_tag }}
+          TARBALL: ${{ steps.meta.outputs.tarball }}
+        run: |
           if npm view "${PROJECT_NAME}@${VERSION}" version >/dev/null 2>&1; then
+            INTEGRITY=$(node -p '"sha512-" + require("crypto").createHash("sha512").update(require("fs").readFileSync(process.argv[1])).digest("base64")' "$TARBALL")
+            PUBLISHED_INTEGRITY=$(npm view "${PROJECT_NAME}@${VERSION}" dist.integrity)
+            if [ "$PUBLISHED_INTEGRITY" != "$INTEGRITY" ]; then
+              echo "::error::${PROJECT_NAME}@${VERSION} is already published with other bytes (${PUBLISHED_INTEGRITY}) than this run's tarball (${INTEGRITY}); nothing this run approved was published."
+              exit 1
+            fi
             TAGGED_VERSION=$(npm view "${PROJECT_NAME}@${DIST_TAG}" version 2>/dev/null || true)
             if [ "$TAGGED_VERSION" != "$VERSION" ]; then
               echo "::error::${PROJECT_NAME}@${VERSION} is already published, but dist-tag '${DIST_TAG}' points to '${TAGGED_VERSION:-nothing}'. OIDC cannot mutate dist-tags; repair it manually with an authorized npm account."
               exit 1
             fi
-            echo "::notice::${PROJECT_NAME}@${VERSION} already published and dist-tag '${DIST_TAG}' is correct — skipping publish."
+            echo "::notice::${PROJECT_NAME}@${VERSION} is already published with these exact bytes and dist-tag '${DIST_TAG}' is correct — skipping publish."
           else
-            # Trusted Publishing generates provenance automatically for public packages.
-            npm publish --access public --tag "${DIST_TAG}"
+            # Trusted Publishing generates provenance automatically for public packages. A
+            # tarball takes the same OIDC and provenance path as a directory; lifecycle
+            # scripts never run for one, and --ignore-scripts keeps it that way.
+            npm publish "$TARBALL" --access public --tag "${DIST_TAG}" --ignore-scripts
           fi
 
-      # Post-publish smoke test: install the just-published package from the registry (clean dir)
-      # and confirm it resolves to the expected version. Catches "published but unusable"
-      # (bad files/exports/version). The publish already succeeded and npm is immutable, so a
-      # persistent miss here is a WARNING (registry propagation lag — common on a first publish),
-      # NOT a release failure. A version MISMATCH after install still hard-fails.
+  # ══════════════════════════════════════════════════════════════════════════════
+  # SMOKE JOB — installs the published version the way a consumer does
+  # ══════════════════════════════════════════════════════════════════════════════
+  smoke:
+    name: Smoke-test published package
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # checkout, for the smoke script
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.14.0'
+
+      # The publish already succeeded and npm is immutable, so a version the registry
+      # does not serve within the wait window (exit 75) is a WARNING: propagation lag,
+      # common on a first publish, or a registry outage. Any other failure means the
+      # published package is broken and fails the job.
       - name: Smoke-test published package
+        env:
+          VERSION: ${{ needs.publish.outputs.version }}
+          DIST_TAG: ${{ needs.publish.outputs.dist_tag }}
         run: |
-          VERSION="${{ steps.meta.outputs.version }}"
-          DIST_TAG="${{ steps.meta.outputs.dist_tag }}"
-          workdir="$(mktemp -d)"
-          cd "$workdir"
-          npm init -y >/dev/null
-          # First publishes propagate slowly; --prefer-online bypasses the negative cache. Back off ~2min.
-          installed=false
-          for attempt in 1 2 3 4 5 6 7 8; do
-            if npm install --prefer-online "${PROJECT_NAME}@${VERSION}"; then installed=true; break; fi
-            echo "install attempt ${attempt} failed; waiting 15s for registry propagation..."
-            sleep 15
-          done
-          if [ "$installed" = true ]; then
-            node -e "const p = require('${PROJECT_NAME}/package.json'); if (p.version !== '${VERSION}') { throw new Error('installed ' + p.version + ', expected ${VERSION}'); } console.log('smoke ok:', p.name, p.version);"
-            echo "::notice::Smoke test passed: ${PROJECT_NAME}@${VERSION} installs and resolves (dist-tag ${DIST_TAG})."
-          else
-            echo "::warning::${PROJECT_NAME}@${VERSION} published successfully but did not resolve from the registry within the wait window (propagation lag — common on a first publish). Verify manually: npm view ${PROJECT_NAME}@${VERSION} --prefer-online"
-          fi
+          rc=0
+          SMOKE_INSTALL_ATTEMPTS=8 bash scripts/smoke-test-package.sh "${PROJECT_NAME}@${VERSION}" "${VERSION}" || rc=$?
+          case "$rc" in
+            0) echo "::notice::Smoke test passed: ${PROJECT_NAME}@${VERSION} installs (dist-tag ${DIST_TAG}) and every wrapper loads." ;;
+            75) echo "::warning::${PROJECT_NAME}@${VERSION} published successfully but the registry did not serve it within the wait window (propagation lag, common on a first publish, or a registry outage). Verify manually: npm view ${PROJECT_NAME}@${VERSION} --prefer-online" ;;
+            *)
+              echo "::error::${PROJECT_NAME}@${VERSION} failed the smoke test after publishing (the log above says why); a broken release needs a new version."
+              exit 1
+              ;;
+          esac

@@ -14,6 +14,7 @@
     "clean": "rm -rf ./src/artifacts ./target codegenCache.json",
     "codegen": "aztec codegen target --outdir src/artifacts -f",
     "compile": "aztec compile",
+    "check:noir-deps": "bash scripts/check-noir-deps.sh",
     "test": "yarn test:nr && yarn test:js",
     "test:js": "vitest run",
     "test:nr": "aztec test",
@@ -32,23 +33,39 @@
   "devDependencies": {
     "@aztec-foundation/aztec-benchmark": "6.0.0-rc.1",
     "@aztec-foundation/bb.js": "6.0.0-rc.1",
-    "@aztec-labs/foundation": "6.0.0-rc.1",
     "@aztec-labs/pxe": "6.0.0-rc.1",
     "@aztec-labs/stdlib": "6.0.0-rc.1",
     "@aztec-labs/wallet-sdk": "6.0.0-rc.1",
     "@aztec-labs/wallets": "6.0.0-rc.1",
+    "@iarna/toml": "2.2.5",
     "@types/node": "25.0.10",
     "husky": "9.1.7",
     "lint-staged": "16.2.7",
     "prettier": "3.8.0",
     "typescript": "5.9.3",
-    "vitest": "4.0.17"
+    "vitest": "4.1.11"
+  },
+  "resolutions": {
+    "**/@types/request/form-data": "2.5.6",
+    "@tootallnate/once": "2.0.1",
+    "axios": "1.20.0",
+    "brace-expansion": "5.0.12",
+    "fast-copy": "4.1.0",
+    "fast-xml-parser": "5.7.2",
+    "postcss": "8.5.23",
+    "protobufjs": "7.6.5",
+    "qs": "6.16.0",
+    "source-map-js": "1.2.2",
+    "strnum": "2.4.2",
+    "systeminformation": "5.31.7",
+    "vite": "7.3.7",
+    "ws": "8.21.0"
   },
   "config": {
     "aztecVersion": "6.0.0-rc.1"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

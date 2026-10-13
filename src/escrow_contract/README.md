@@ -135,6 +135,8 @@ pub fn _withdraw_nft(
 > **Warning**
 > The key derivation module depends on [noir-lang/sha512](https://github.com/noir-lang/sha512), which has not been reviewed by the Noir team and is unaudited. Use at your own risk.
 
+The dependency tracks upstream `master`, which has no tags, and CI checks that nargo's clone of it is at the commit recorded in [`noir-dep-revisions.txt`](../../noir-dep-revisions.txt).
+
 The escrow contract includes a standalone `key_derivation` module that replicates the Aztec protocol's key derivation pipeline entirely in Noir. This allows the escrow contract to derive all master secret keys and public keys from a single `secret_key: Field`, without depending on the PXE or any external key management.
 
 This is critical because:

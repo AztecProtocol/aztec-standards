@@ -1,6 +1,6 @@
 // Import Aztec dependencies
 import { Fr } from '@aztec-labs/aztec.js/fields';
-import { deriveKeys } from '@aztec-labs/stdlib/keys';
+import { deriveKeys } from '@aztec-labs/aztec.js/keys';
 import type { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
 import { AztecAddress } from '@aztec-labs/aztec.js/addresses';
 import { getContractClassFromArtifact } from '@aztec-labs/aztec.js/contracts';

@@ -5,10 +5,10 @@ import { Fr } from '@aztec-labs/aztec.js/fields';
 import { createAztecNodeClient, waitForNode, waitForTx } from '@aztec-labs/aztec.js/node';
 import { type ContractInstanceWithAddress } from '@aztec-labs/aztec.js/contracts';
 import { publishContractClass } from '@aztec-labs/aztec.js/deployment';
-import { TxHash } from '@aztec-labs/aztec.js/tx';
+import { TxHash, type ExecutionPayload, type TxExecutionRequest } from '@aztec-labs/aztec.js/tx';
 import { EmbeddedWallet } from '@aztec-labs/wallets/embedded';
 import { registerInitialLocalNetworkAccountsInWallet } from '@aztec-labs/wallets/testing';
-import { PublicKeys } from '@aztec-labs/stdlib/keys';
+import { PublicKeys } from '@aztec-labs/aztec.js/keys';
 import { type PublicLog } from '@aztec-labs/stdlib/logs';
 
 import {
@@ -27,8 +27,7 @@ import {
 } from '@aztec-labs/stdlib/contract';
 
 import { getPXEConfig } from '@aztec-labs/pxe/server';
-import { type TxExecutionRequest, type TxProvingResult } from '@aztec-labs/stdlib/tx';
-import { type ExecutionPayload } from '@aztec-labs/stdlib/tx';
+import { type TxProvingResult } from '@aztec-labs/stdlib/tx';
 import { type FeeOptions } from '@aztec-labs/wallet-sdk/base-wallet';
 import { Barretenberg } from '@aztec-foundation/bb.js';
 
