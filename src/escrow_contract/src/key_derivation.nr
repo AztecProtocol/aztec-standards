@@ -42,7 +42,7 @@ fn reduce_to_scalar(hash: [u8; 64]) -> EmbeddedCurveScalar {
     }
 
     let hash_value: U512 = U512::from_be_bytes(hash_padded);
-    let (_, remainder) = hash_value.udiv_mod(FQ_MODULUS_U512);
+    let (_, remainder) = hash_value.udiv_mod(&FQ_MODULUS_U512);
 
     // U512 limbs are 120-bit each (little-endian).
     // EmbeddedCurveScalar splits at 128 bits: lo = lower 128 bits, hi = upper bits.

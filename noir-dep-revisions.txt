@@ -3,4 +3,4 @@
 # sha512 has no tags, so its `master` moves: review the upstream change before updating the entry, since escrow
 # key derivation hashes with it. Other git dependencies declared in this repo can be listed the same way to catch
 # a moved tag.
-github.com/noir-lang/sha512/master e92ffb473f3264529a0793770f63a09946df50cc
+github.com/noir-lang/sha512/master 811b3780afb2c231d6a0bea3e833d02df1536af6

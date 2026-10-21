@@ -67,7 +67,9 @@ find . -name Nargo.toml -not -path '*/node_modules/*'
 - Every `@aztec-labs/*` dependency → the npm version, and `@aztec-foundation/bb.js` → the version that SDK
   depends on (Step 0), both **pinned exactly**: the `latest` dist-tag has pointed at a stale nightly, and any
   other bb.js pin installs a second Barretenberg next to the SDK's.
-- `viem` stays the `npm:@aztec/viem@…` alias the SDK itself uses.
+- `viem` → exactly the specifier the SDK itself depends on (`npm view @aztec-labs/aztec.js@X.Y.Z dependencies`):
+  upstream `viem@2.57.1` since 6.0.0-rc.4, the `npm:@aztec/viem@…` alias before it. A spec that resolves to
+  another version or package installs a second viem beside the SDK's.
 - `config.aztecVersion` → the npm version (the `setup-aztec` CI action reads this to install the toolchain).
 - The package's own `version` is the *release* version — bump it too if this repo tracks aztec (it does), else leave.
 - **`@aztec-foundation/aztec-benchmark` is a separate package** (its own repo/release). Only bump it if a matching release exists; it declares the Aztec SDK as **peerDependencies**, so it must resolve to the same aztec version — mismatches cause duplicate-type errors (see Gotchas). Move the devDependency and the two reusable-workflow pins (`pr-checks.yml`, `update-baseline.yml`) to the same release commit together.
@@ -86,7 +88,11 @@ env -i HOME="$V" AZTEC_HOME="$V/.aztec" TMPDIR="$TMPDIR" LANG=C.UTF-8 AZTEC_NO_A
   bash "$HOME/.aztec/bin/aztec-up" install <version>
 export AZTEC_HOME="$V/.aztec" PATH="$V/.aztec/current/bin:$PATH"
 ```
-Confirm: `aztec --version`. The v6 installer needs Node ≥ 24.12 (`install.aztec-labs.com/<version>/versions`).
+Confirm: `aztec --version`. The installer needs the Node that `install.aztec-labs.com/<version>/versions` names
+(24.15 since 6.0.0-rc.4). Its foundryup step refuses to run while any `anvil` is running on the host, other
+agents' included: then download that file's foundry release yourself, check it with
+`gh attestation verify <tarball> --repo foundry-rs/foundry`, and run the version's `install` script with
+`install_foundry` copying those binaries instead of calling foundryup.
 
 ## Step 4 — local validation (prove the bump)
 Before running the checks, audit every local type/cast that exposes non-public Aztec APIs. These
@@ -148,6 +154,11 @@ When everything is green: commit, open a PR to `main`, let CI pass, merge. Then 
   `NARGO_FOREIGN_CALL_TIMEOUT=300000 aztec-nargo test --silence-warnings --oracle-resolver http://127.0.0.1:<p>`.
   `aztec start --local-network` likewise defaults anvil to `ANVIL_PORT` 8545 and keeps any inherited
   `ETHEREUM_HOSTS`: set both explicitly.
+- **On a loaded host a few TXE tests can fail with `Public keys not registered for account …`.** The TXE drops
+  a test's session when its HTTP socket closes and answers the next call with a fresh, empty one, so a test
+  whose connection closes mid-run (most likely Node's idle keep-alive timeout, 5 s plus a 1 s buffer, on a
+  starved test) runs on without its accounts. Rerun the failures alone
+  (`aztec-nargo test --package <crate> --exact <test>`, same `--oracle-resolver`) before blaming the bump.
 - **Hand-rolled reproductions of aztec internals break on API changes.**
   - `src/escrow_contract/src/key_derivation.nr` re-implements `deriveKeys`; when v5 added master
     message-signing/fallback keys, escrow addresses stopped matching. If `get_escrow`/derivation tests
@@ -170,7 +181,8 @@ When everything is green: commit, open a PR to `main`, let CI pass, merge. Then 
   internals used by commitment helpers. Run `yarn test:js` and `yarn bench` against a local network, or
   require their CI jobs to pass before calling the bump validated.
 - **CI Node floor.** The shared `aztec-ci-actions` `setup-aztec` action pins `setup-node` to 24.0.0, below
-  the v6 installer's 24.12 floor. If CI fails installing the toolchain, that action needs a bump first.
+  the installer's floor (24.12 for rc.1 and rc.3, 24.15 for rc.4). If CI fails installing the toolchain, that
+  action needs a bump first.
 - **Benchmark peerDep / duplicate tree.** `aztec-benchmark` 5.x peers `@aztec/*` `>=5 <6`; 6.0.0-rc.1 is
   the first release with `@aztec-labs/*` peers. Yarn only warns about a mismatch and tsx doesn't
   type-check, so run `yarn typecheck` (`tsconfig.json` includes `benchmarks/`) and then the benchmarks

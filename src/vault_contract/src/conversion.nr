@@ -50,7 +50,8 @@ pub fn mul_div(a: u128, b: u128, denominator: u128, round_up: bool) -> u128 {
     // vault's (always non-zero) call sites.
     assert(denominator > 0, "division by zero");
     let numerator = u256_from_u128(a) * u256_from_u128(b);
-    let (quotient, remainder) = numerator.udiv_mod(u256_from_u128(denominator));
+    let divisor = u256_from_u128(denominator);
+    let (quotient, remainder) = numerator.udiv_mod(&divisor);
 
     let mut result = u256_to_u128(quotient);
     if round_up & !u256_is_zero(remainder) {
