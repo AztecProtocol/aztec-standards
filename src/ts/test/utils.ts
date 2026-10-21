@@ -448,7 +448,7 @@ export async function setPublicAuthWit(
  * private return value (the commitment) of the SAME execution that gets submitted. Do NOT replace
  * this with simulate()-then-send(): `initialize_transfer_commitment` derives its commitment from
  * randomness drawn fresh on every private execution, so a simulated commitment would never match
- * the partial note the sent tx actually creates. As of @aztec-labs/* 6.0.0-rc.3 no public wallet API
+ * the partial note the sent tx actually creates. As of @aztec-labs/* 6.0.0-rc.4 no public wallet API
  * exposes private return values (BaseWallet.sendTx discards privateExecutionResult) — re-check on bumps.
  */
 async function proveExtractAndSendCommitment(
