@@ -10,4 +10,4 @@ token = { path = "../token_contract" }
 nft = { path = "../nft_contract" }
 # Upstream has no tags and nargo pins only refs, so CI checks the resolved commit (scripts/check-noir-deps.sh).
 sha512 = { git = "https://github.com/noir-lang/sha512", tag = "master" }
-bignum = { git = "https://github.com/noir-lang/noir-bignum", tag = "v0.10.0" }
+bignum = { git = "https://github.com/noir-lang/noir-bignum", tag = "v0.11.0" }
