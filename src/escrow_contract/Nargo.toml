@@ -5,7 +5,7 @@ compiler_version = ">=1.0.0"
 type = "contract"
 
 [dependencies]
-aztec = { git = "https://github.com/aztec-labs-eng/aztec-nr", tag = "v6.0.0-rc.4", directory = "aztec" }
+aztec = { git = "https://github.com/aztec-labs-eng/aztec-nr", tag = "v6.0.0", directory = "aztec" }
 token = { path = "../token_contract" }
 nft = { path = "../nft_contract" }
 # Upstream has no tags and nargo pins only refs, so CI checks the resolved commit (scripts/check-noir-deps.sh).

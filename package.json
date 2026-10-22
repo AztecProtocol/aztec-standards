@@ -1,6 +1,6 @@
 {
   "name": "@aztec-foundation/aztec-standards",
-  "version": "6.0.0-rc.4",
+  "version": "6.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AztecProtocol/aztec-standards.git"
@@ -28,15 +28,15 @@
     "*.ts": "prettier --write -u"
   },
   "dependencies": {
-    "@aztec-labs/aztec.js": "6.0.0-rc.4"
+    "@aztec-labs/aztec.js": "6.0.0"
   },
   "devDependencies": {
     "@aztec-foundation/aztec-benchmark": "6.0.0-rc.1",
-    "@aztec-foundation/bb.js": "6.0.0-rc.7",
-    "@aztec-labs/pxe": "6.0.0-rc.4",
-    "@aztec-labs/stdlib": "6.0.0-rc.4",
-    "@aztec-labs/wallet-sdk": "6.0.0-rc.4",
-    "@aztec-labs/wallets": "6.0.0-rc.4",
+    "@aztec-foundation/bb.js": "6.0.0",
+    "@aztec-labs/pxe": "6.0.0",
+    "@aztec-labs/stdlib": "6.0.0",
+    "@aztec-labs/wallet-sdk": "6.0.0",
+    "@aztec-labs/wallets": "6.0.0",
     "@iarna/toml": "2.2.5",
     "@types/node": "25.0.10",
     "husky": "9.1.7",
@@ -63,7 +63,7 @@
     "ws": "8.21.0"
   },
   "config": {
-    "aztecVersion": "6.0.0-rc.4"
+    "aztecVersion": "6.0.0"
   },
   "engines": {
     "node": ">=22.12.0"
